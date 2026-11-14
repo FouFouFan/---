@@ -1,0 +1,60 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: #f2ede3;
+  color: #2f2a24;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #3b342c;
+  color: #f7f2e8;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.status {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.status[data-state="online"] {
+  background: #2f7d4f;
+}
+
+.status[data-state="offline"] {
+  background: #a33b3b;
+}
+
+.layout {
+  display: flex;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.board-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 600px;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  background: #e3c68d;
+  box-shadow: 0 10px 30px rgba(59, 52, 44, 0.18);
+}
