@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * 客户端入口：棋盘绘制（T2-2）、WebSocket 连接（T2-1）。
+ * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、WebSocket 连接（T2-1）。
  */
 
 const SIZE = 15; // 15x15 棋盘
@@ -11,6 +11,7 @@ const CELL = (CANVAS_LOGICAL_SIZE - PADDING * 2) / (SIZE - 1); // 相邻交叉�
 const BOARD_COLOR = '#e8c98f';
 const LINE_COLOR = '#6b5333';
 const STAR_RADIUS = 4;
+const STONE_RADIUS = CELL * 0.42; // 棋子半径，保证相邻棋子间留有间隙
 // 星位：四角 (3,3)/(3,11)/(11,3)/(11,11) 与天元 (7,7)
 const STAR_POINTS = [
   [3, 3],
@@ -66,6 +67,45 @@ function drawBoard() {
     ctx.arc(gridX(col), gridY(row), STAR_RADIUS, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+/**
+ * 在交叉点 (row, col) 绘制一枚棋子。
+ * @param {number} row 行索引 0–14
+ * @param {number} col 列索引 0–14
+ * @param {'black'|'white'} color 棋子颜色
+ */
+function drawStone(row, col, color) {
+  const x = gridX(col);
+  const y = gridY(row);
+
+  // 黑白棋子使用不同渐变，表现立体感
+  const gradient = ctx.createRadialGradient(
+    x - STONE_RADIUS / 3,
+    y - STONE_RADIUS / 3,
+    STONE_RADIUS / 6,
+    x,
+    y,
+    STONE_RADIUS
+  );
+  if (color === 'black') {
+    gradient.addColorStop(0, '#6f6f6f');
+    gradient.addColorStop(1, '#0d0d0d');
+  } else {
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(1, '#c9c9c9');
+  }
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetY = 2;
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, STONE_RADIUS, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 /**
