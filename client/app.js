@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、点击落子（T2-4）、WebSocket 连接（T2-1）。
+ * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、点击落子（T2-4）、
+ * 服务端消息同步（T2-5）、WebSocket 连接（T2-1）。
  */
 
 const SIZE = 15; // 15x15 棋盘
@@ -31,6 +32,8 @@ let socket = null; // WebSocket 连接（T2-1）
 let inGame = false; // 是否已进入对局
 let myColor = null; // 自己执子颜色，由 match_success 下发
 let currentTurn = null; // 当前该谁落子，由 turn_start 下发
+let pendingMove = null; // 已发送但未确认的落子，用于被拒绝时回滚
+let gameFinished = false; // 对局是否已结束
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -144,7 +147,7 @@ function pointToCell(event) {
 
 /** 点击落子（T2-4）：仅在自己回合、点击空交叉点时才发送落子请求 */
 function handleCanvasClick(event) {
-  if (!inGame) return;
+  if (!inGame || gameFinished) return;
 
   const { row, col } = pointToCell(event);
   if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
@@ -155,6 +158,7 @@ function handleCanvasClick(event) {
   board[row][col] = myColor;
   drawStone(row, col, myColor);
 
+  pendingMove = { row, col };
   // 等待服务端返回下一回合的 turn_start，避免同一回合重复落子
   currentTurn = null;
   sendMessage({ type: 'move', row, col });
@@ -188,23 +192,63 @@ function sendMessage(message) {
 }
 
 /**
- * 处理影响「能否落子」的消息；完整同步逻辑在 T2-5 中实现。
+ * 处理服务端消息：同步对局状态（T2-5）。
  */
 function handleGameMessage(message) {
   switch (message.type) {
     case 'match_success':
       inGame = true;
+      gameFinished = false;
       myColor = message.color;
       currentTurn = null;
+      pendingMove = null;
       for (const row of board) row.fill(null);
       renderAll();
       break;
+
     case 'turn_start':
       currentTurn = message.color;
       break;
+
+    case 'move':
+      applyMove(message.row, message.col, message.color);
+      break;
+
+    case 'move_rejected':
+      rollbackPendingMove();
+      console.warn('[game] move rejected:', message.reason, message.message);
+      if (message.reason === 'occupied' || message.reason === 'out_of_range') {
+        // 落子未被接受，仍是我方回合，允许重新选择落点
+        currentTurn = myColor;
+      }
+      break;
+
+    case 'game_over':
+      gameFinished = true;
+      currentTurn = null;
+      console.log('[game] over:', message.winner, message.reason);
+      break;
+
     default:
       break;
   }
+}
+
+/** 应用服务端广播的落子（服务端为权威状态） */
+function applyMove(row, col, color) {
+  board[row][col] = color;
+  if (pendingMove && pendingMove.row === row && pendingMove.col === col) {
+    pendingMove = null;
+  }
+  renderAll();
+}
+
+/** 落子被服务端拒绝时，撤销本地先行绘制的棋子 */
+function rollbackPendingMove() {
+  if (!pendingMove) return;
+  board[pendingMove.row][pendingMove.col] = null;
+  pendingMove = null;
+  renderAll();
 }
 
 function connect() {
