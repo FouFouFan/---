@@ -1,6 +1,8 @@
 'use strict';
 
 const { send } = require('./protocol');
+const { Board } = require('./board');
+const { startTurnTimer } = require('./game');
 
 /**
  * 匹配队列与房间管理。
@@ -43,6 +45,9 @@ class Matchmaker {
     const id = `room-${this.nextRoomId++}`;
     const room = {
       id,
+      board: new Board(), // 权威棋盘，开局为空
+      turn: 'black', // 黑方先手
+      finished: false, // 对局是否已结束
       players: [
         { ws: first, color: 'black' },
         { ws: second, color: 'white' },
@@ -59,6 +64,9 @@ class Matchmaker {
     for (const player of room.players) {
       send(player.ws, { type: 'match_success', roomId: id, color: player.color });
     }
+
+    // 黑方先手，开局即启动首回合 5 分钟倒计时并广播 turn_start
+    startTurnTimer(room);
 
     console.log(
       `[${new Date().toISOString()}] match created ${id}: client#${first.clientId}(black) vs client#${second.clientId}(white)`
