@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、WebSocket 连接（T2-1）。
+ * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、点击落子（T2-4）、WebSocket 连接（T2-1）。
  */
 
 const SIZE = 15; // 15x15 棋盘
@@ -23,6 +23,14 @@ const STAR_POINTS = [
 
 const canvas = document.getElementById('board-canvas');
 const ctx = canvas.getContext('2d');
+
+// 本地棋盘：null 表示空，'black' / 'white' 表示棋子
+const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+
+let socket = null; // WebSocket 连接（T2-1）
+let inGame = false; // 是否已进入对局
+let myColor = null; // 自己执子颜色，由 match_success 下发
+let currentTurn = null; // 当前该谁落子，由 turn_start 下发
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -108,6 +116,52 @@ function drawStone(row, col, color) {
   ctx.restore();
 }
 
+/** 重绘棋盘与全部棋子 */
+function renderAll() {
+  drawBoard();
+  for (let row = 0; row < SIZE; row++) {
+    for (let col = 0; col < SIZE; col++) {
+      const color = board[row][col];
+      if (color) drawStone(row, col, color);
+    }
+  }
+}
+
+/**
+ * 把鼠标事件换算成最近的棋盘交叉点坐标。
+ * 画布可能被 CSS 缩放，因此需要按实际显示尺寸换算回 600×600 逻辑坐标。
+ */
+function pointToCell(event) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (CANVAS_LOGICAL_SIZE / rect.width);
+  const y = (event.clientY - rect.top) * (CANVAS_LOGICAL_SIZE / rect.height);
+
+  return {
+    row: Math.round((y - PADDING) / CELL),
+    col: Math.round((x - PADDING) / CELL),
+  };
+}
+
+/** 点击落子（T2-4）：仅在自己回合、点击空交叉点时才发送落子请求 */
+function handleCanvasClick(event) {
+  if (!inGame) return;
+
+  const { row, col } = pointToCell(event);
+  if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
+  if (currentTurn !== myColor) return; // 不是自己的回合
+  if (board[row][col] !== null) return; // 该位置已有棋子
+
+  // 本地即时反馈；以服务端广播的结果为最终状态（T2-5 负责同步）
+  board[row][col] = myColor;
+  drawStone(row, col, myColor);
+
+  // 等待服务端返回下一回合的 turn_start，避免同一回合重复落子
+  currentTurn = null;
+  sendMessage({ type: 'move', row, col });
+}
+
+canvas.addEventListener('click', handleCanvasClick);
+
 /**
  * WebSocket 连接（T2-1）：建立与游戏服务端的连接并展示连接状态。
  */
@@ -124,10 +178,39 @@ function setStatus(text, state) {
   statusEl.dataset.state = state;
 }
 
+/** 发送 JSON 消息；未连接时丢弃 */
+function sendMessage(message) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.warn('[ws] not connected, message dropped:', message);
+    return;
+  }
+  socket.send(JSON.stringify(message));
+}
+
+/**
+ * 处理影响「能否落子」的消息；完整同步逻辑在 T2-5 中实现。
+ */
+function handleGameMessage(message) {
+  switch (message.type) {
+    case 'match_success':
+      inGame = true;
+      myColor = message.color;
+      currentTurn = null;
+      for (const row of board) row.fill(null);
+      renderAll();
+      break;
+    case 'turn_start':
+      currentTurn = message.color;
+      break;
+    default:
+      break;
+  }
+}
+
 function connect() {
   setStatus('连接中…', 'connecting');
 
-  const socket = new WebSocket(WS_URL);
+  socket = new WebSocket(WS_URL);
 
   socket.addEventListener('open', () => {
     console.log('[ws] connected:', WS_URL);
@@ -153,9 +236,10 @@ function connect() {
       return;
     }
     console.log('[ws] message:', message);
+    handleGameMessage(message);
   });
 }
 
 setupCanvas();
-drawBoard();
+renderAll();
 connect();
