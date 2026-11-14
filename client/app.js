@@ -2,7 +2,8 @@
 
 /**
  * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、点击落子（T2-4）、
- * 服务端消息同步（T2-5）、回合提示与倒计时（T2-6）、WebSocket 连接（T2-1）。
+ * 服务端消息同步（T2-5）、回合提示与倒计时（T2-6）、匹配界面（T2-7）、
+ * WebSocket 连接（T2-1）。
  */
 
 const SIZE = 15; // 15x15 棋盘
@@ -27,6 +28,9 @@ const ctx = canvas.getContext('2d');
 const gameInfoEl = document.getElementById('game-info');
 const turnLabelEl = document.getElementById('turn-label');
 const countdownEl = document.getElementById('countdown');
+const matchOverlayEl = document.getElementById('match-overlay');
+const matchHintEl = document.getElementById('match-hint');
+const matchButtonEl = document.getElementById('match-button');
 
 // 本地棋盘：null 表示空，'black' / 'white' 表示棋子
 const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
@@ -39,6 +43,7 @@ let pendingMove = null; // 已发送但未确认的落子，用于被拒绝时�
 let gameFinished = false; // 对局是否已结束
 let countdownTimer = null; // 倒计时刷新定时器
 let turnDeadline = null; // 当前回合截止时间（服务端下发）
+let searching = false; // 是否正在匹配队列中
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -257,16 +262,23 @@ function handleGameMessage(message) {
     case 'match_success':
       inGame = true;
       gameFinished = false;
+      searching = false;
       myColor = message.color;
       currentTurn = null;
       pendingMove = null;
       stopCountdown();
+      hideMatchPanel();
       gameInfoEl.hidden = false;
       countdownEl.textContent = '5:00';
       countdownEl.dataset.state = 'normal';
       updateTurnLabel();
       for (const row of board) row.fill(null);
       renderAll();
+      break;
+
+    case 'match_waiting':
+      searching = true;
+      showMatchPanel('正在匹配，等待对手加入…', '匹配中…', true);
       break;
 
     case 'turn_start': {
@@ -321,6 +333,30 @@ function rollbackPendingMove() {
   renderAll();
 }
 
+/** 显示匹配面板 */
+function showMatchPanel(hint, buttonText, buttonDisabled) {
+  matchOverlayEl.hidden = false;
+  matchHintEl.textContent = hint;
+  matchButtonEl.textContent = buttonText;
+  matchButtonEl.disabled = buttonDisabled;
+}
+
+/** 隐藏匹配面板 */
+function hideMatchPanel() {
+  matchOverlayEl.hidden = true;
+}
+
+matchButtonEl.addEventListener('click', () => {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    showMatchPanel('尚未连接服务器，请稍后重试', '开始匹配', true);
+    return;
+  }
+
+  searching = true;
+  showMatchPanel('正在匹配，等待对手加入…', '匹配中…', true);
+  sendMessage({ type: 'match_request' });
+});
+
 function connect() {
   setStatus('连接中…', 'connecting');
 
@@ -329,11 +365,20 @@ function connect() {
   socket.addEventListener('open', () => {
     console.log('[ws] connected:', WS_URL);
     setStatus('已连接', 'online');
+    if (searching) {
+      showMatchPanel('正在匹配，等待对手加入…', '匹配中…', true);
+    } else if (!inGame) {
+      showMatchPanel('点击下方按钮开始匹配对手', '开始匹配', false);
+    }
   });
 
   socket.addEventListener('close', () => {
     console.log('[ws] disconnected');
     setStatus('已断开', 'offline');
+    if (searching) {
+      searching = false;
+      showMatchPanel('连接已断开，请刷新页面重试', '开始匹配', true);
+    }
   });
 
   socket.addEventListener('error', () => {
