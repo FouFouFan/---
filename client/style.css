@@ -55,6 +55,13 @@ body {
   max-width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 12px;
-  background: #e3c68d;
+  background: #e8c98f;
   box-shadow: 0 10px 30px rgba(59, 52, 44, 0.18);
+}
+
+#board-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
 }
