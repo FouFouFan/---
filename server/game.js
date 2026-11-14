@@ -97,6 +97,9 @@ function endGame(room, winner, reason, positions) {
   if (positions) message.positions = positions;
   for (const p of room.players) send(p.ws, message);
 
+  // 通知外部（server.js）清理房间，便于双方立即重新匹配
+  if (typeof room.onEnd === 'function') room.onEnd(room);
+
   console.log(
     `[${new Date().toISOString()}] room ${room.id} game over: winner=${winner} reason=${reason}`
   );

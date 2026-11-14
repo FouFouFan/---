@@ -3,7 +3,7 @@
 /**
  * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、点击落子（T2-4）、
  * 服务端消息同步（T2-5）、回合提示与倒计时（T2-6）、匹配界面（T2-7）、
- * WebSocket 连接（T2-1）。
+ * 对局结果弹窗（T2-8）、WebSocket 连接（T2-1）。
  */
 
 const SIZE = 15; // 15x15 棋盘
@@ -31,6 +31,10 @@ const countdownEl = document.getElementById('countdown');
 const matchOverlayEl = document.getElementById('match-overlay');
 const matchHintEl = document.getElementById('match-hint');
 const matchButtonEl = document.getElementById('match-button');
+const resultOverlayEl = document.getElementById('result-overlay');
+const resultTitleEl = document.getElementById('result-title');
+const resultMessageEl = document.getElementById('result-message');
+const resultButtonEl = document.getElementById('result-button');
 
 // 本地棋盘：null 表示空，'black' / 'white' 表示棋子
 const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
@@ -268,6 +272,7 @@ function handleGameMessage(message) {
       pendingMove = null;
       stopCountdown();
       hideMatchPanel();
+      hideResultPanel();
       gameInfoEl.hidden = false;
       countdownEl.textContent = '5:00';
       countdownEl.dataset.state = 'normal';
@@ -305,9 +310,11 @@ function handleGameMessage(message) {
 
     case 'game_over':
       gameFinished = true;
+      inGame = false;
       currentTurn = null;
       stopCountdown();
       updateTurnLabel();
+      showResultPanel(message.winner, message.reason);
       console.log('[game] over:', message.winner, message.reason);
       break;
 
@@ -345,6 +352,40 @@ function showMatchPanel(hint, buttonText, buttonDisabled) {
 function hideMatchPanel() {
   matchOverlayEl.hidden = true;
 }
+
+/** 对局结束原因文案（按胜负区分） */
+const RESULT_REASON_TEXT = {
+  win: { won: '你率先连成五子，赢下本局', lost: '对手率先连成五子，你落败' },
+  timeout: { won: '对手超时未落子，你获胜', lost: '你超时未落子，判负' },
+  disconnect: { won: '对手断线，你获胜', lost: '你已断线，判负' },
+};
+
+/** 显示对局结果弹窗（T2-8），以服务端下发的 winner/reason 为准 */
+function showResultPanel(winner, reason) {
+  const won = winner === myColor;
+  const text = RESULT_REASON_TEXT[reason] || {
+    won: '对局结束，你获胜',
+    lost: '对局结束，你落败',
+  };
+
+  resultTitleEl.textContent = won ? '你赢了' : '你输了';
+  resultTitleEl.dataset.state = won ? 'win' : 'lose';
+  resultMessageEl.textContent = won ? text.won : text.lost;
+  resultOverlayEl.hidden = false;
+}
+
+/** 隐藏对局结果弹窗 */
+function hideResultPanel() {
+  resultOverlayEl.hidden = true;
+}
+
+resultButtonEl.addEventListener('click', () => {
+  hideResultPanel();
+  if (!inGame) {
+    // 对局已结束：回到匹配入口，便于直接开始下一局
+    showMatchPanel('点击下方按钮开始匹配对手', '开始匹配', false);
+  }
+});
 
 matchButtonEl.addEventListener('click', () => {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
