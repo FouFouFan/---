@@ -29,6 +29,8 @@ function clearPlayerRoomState(ws) {
  * 使双方可以立即重新匹配。
  */
 function cleanupRoom(room) {
+  if (!matchmaker.rooms.has(room.id)) return; // 已清理过则直接返回，保证幂等
+
   clearTurnTimer(room);
   for (const player of room.players) {
     clearPlayerRoomState(player.ws);

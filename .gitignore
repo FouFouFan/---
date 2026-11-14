@@ -4,3 +4,6 @@ npm-debug.log*
 
 # logs / temp
 *.log
+
+# IDE generated
+.trae-html-share-packages/
