@@ -2,7 +2,7 @@
 
 /**
  * 客户端入口：棋盘绘制（T2-2）、棋子绘制（T2-3）、点击落子（T2-4）、
- * 服务端消息同步（T2-5）、WebSocket 连接（T2-1）。
+ * 服务端消息同步（T2-5）、回合提示与倒计时（T2-6）、WebSocket 连接（T2-1）。
  */
 
 const SIZE = 15; // 15x15 棋盘
@@ -24,6 +24,9 @@ const STAR_POINTS = [
 
 const canvas = document.getElementById('board-canvas');
 const ctx = canvas.getContext('2d');
+const gameInfoEl = document.getElementById('game-info');
+const turnLabelEl = document.getElementById('turn-label');
+const countdownEl = document.getElementById('countdown');
 
 // 本地棋盘：null 表示空，'black' / 'white' 表示棋子
 const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
@@ -34,6 +37,8 @@ let myColor = null; // 自己执子颜色，由 match_success 下发
 let currentTurn = null; // 当前该谁落子，由 turn_start 下发
 let pendingMove = null; // 已发送但未确认的落子，用于被拒绝时回滚
 let gameFinished = false; // 对局是否已结束
+let countdownTimer = null; // 倒计时刷新定时器
+let turnDeadline = null; // 当前回合截止时间（服务端下发）
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -161,6 +166,7 @@ function handleCanvasClick(event) {
   pendingMove = { row, col };
   // 等待服务端返回下一回合的 turn_start，避免同一回合重复落子
   currentTurn = null;
+  updateTurnLabel();
   sendMessage({ type: 'move', row, col });
 }
 
@@ -191,6 +197,58 @@ function sendMessage(message) {
   socket.send(JSON.stringify(message));
 }
 
+/** 把剩余毫秒格式化为 m:ss */
+function formatDuration(ms) {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+/** 刷新剩余时间显示（以服务端下发的截止时间为准） */
+function tickCountdown() {
+  if (turnDeadline === null) return;
+
+  const remaining = Math.max(0, turnDeadline - Date.now());
+  countdownEl.textContent = formatDuration(remaining);
+  countdownEl.dataset.state = remaining <= 30000 ? 'low' : 'normal';
+}
+
+/** 开始（或重置）本回合倒计时 */
+function startCountdown(deadline) {
+  turnDeadline = deadline;
+  if (countdownTimer) clearInterval(countdownTimer);
+
+  tickCountdown();
+  countdownTimer = setInterval(tickCountdown, 200);
+}
+
+/** 停止倒计时 */
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+  turnDeadline = null;
+}
+
+/** 更新回合提示文字 */
+function updateTurnLabel() {
+  if (gameFinished) {
+    turnLabelEl.textContent = '对局已结束';
+  } else if (!inGame) {
+    turnLabelEl.textContent = '等待开局…';
+  } else if (currentTurn === myColor) {
+    turnLabelEl.textContent = '轮到你落子';
+  } else if (currentTurn) {
+    turnLabelEl.textContent = '等待对手落子';
+  } else if (pendingMove) {
+    turnLabelEl.textContent = '等待服务端确认…';
+  } else {
+    turnLabelEl.textContent = '等待开局…';
+  }
+}
+
 /**
  * 处理服务端消息：同步对局状态（T2-5）。
  */
@@ -202,13 +260,23 @@ function handleGameMessage(message) {
       myColor = message.color;
       currentTurn = null;
       pendingMove = null;
+      stopCountdown();
+      gameInfoEl.hidden = false;
+      countdownEl.textContent = '5:00';
+      countdownEl.dataset.state = 'normal';
+      updateTurnLabel();
       for (const row of board) row.fill(null);
       renderAll();
       break;
 
-    case 'turn_start':
+    case 'turn_start': {
       currentTurn = message.color;
+      const deadline =
+        typeof message.deadline === 'number' ? message.deadline : Date.now() + (message.remainingMs || 0);
+      startCountdown(deadline);
+      updateTurnLabel();
       break;
+    }
 
     case 'move':
       applyMove(message.row, message.col, message.color);
@@ -226,6 +294,8 @@ function handleGameMessage(message) {
     case 'game_over':
       gameFinished = true;
       currentTurn = null;
+      stopCountdown();
+      updateTurnLabel();
       console.log('[game] over:', message.winner, message.reason);
       break;
 
