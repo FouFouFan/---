@@ -103,6 +103,26 @@ function endGame(room, winner, reason, positions) {
 }
 
 /**
+ * 断线处理（T1-9）：通知对手、判断线方负并结束对局。
+ */
+function handleDisconnect(room, ws) {
+  const player = getPlayer(room, ws);
+  if (!player || room.finished) return;
+
+  const opponent = room.players.find((p) => p !== player);
+  if (opponent) {
+    send(opponent.ws, { type: 'opponent_disconnected', color: player.color });
+  }
+
+  const winner = player.color === 'black' ? 'white' : 'black';
+  console.log(
+    `[${new Date().toISOString()}] room ${room.id}: ${player.color} disconnected, winner=${winner}`
+  );
+
+  endGame(room, winner, 'disconnect');
+}
+
+/**
  * 开始（或重置）当前回合的倒计时，并向房间内双方广播 turn_start。
  * 超时未落子则判当前回合方负，广播 game_over（reason='timeout'）。
  * @param {number} [durationMs] 默认 5 分钟，仅测试时传入更短时限
@@ -164,6 +184,7 @@ module.exports = {
   startTurnTimer,
   clearTurnTimer,
   endGame,
+  handleDisconnect,
   getPlayer,
   REASON_TEXT,
   TURN_DURATION_MS,

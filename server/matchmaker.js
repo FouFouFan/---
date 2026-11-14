@@ -41,6 +41,14 @@ class Matchmaker {
     if (index !== -1) this.queue.splice(index, 1);
   }
 
+  /** 销毁房间并清除双方房间标记（断线时调用） */
+  destroyRoom(room) {
+    for (const player of room.players) {
+      player.ws.roomId = null;
+    }
+    this.rooms.delete(room.id);
+  }
+
   createRoom(first, second) {
     const id = `room-${this.nextRoomId++}`;
     const room = {

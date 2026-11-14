@@ -3,7 +3,7 @@
 const { WebSocketServer } = require('ws');
 const { parse, send } = require('./protocol');
 const { Matchmaker } = require('./matchmaker');
-const { validateMove, applyMove } = require('./game');
+const { validateMove, applyMove, handleDisconnect } = require('./game');
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -68,6 +68,13 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', (code, reason) => {
+    const room = matchmaker.rooms.get(ws.roomId);
+    if (room) {
+      handleDisconnect(room, ws);
+      matchmaker.destroyRoom(room);
+      log(`client#${ws.clientId} left ${room.id}, room destroyed`);
+    }
+
     matchmaker.remove(ws);
     log(`client#${ws.clientId} disconnected (code=${code}, reason=${reason.toString() || '-'})`);
   });
