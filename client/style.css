@@ -6,110 +6,264 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
-  background: #f2ede3;
-  color: #2f2a24;
+  color: #40301f;
+  background:
+    radial-gradient(900px 520px at 50% -6%, rgba(255, 236, 173, 0.9), rgba(255, 236, 173, 0) 70%),
+    linear-gradient(180deg, #e9b94c 0%, #f0cd7b 38%, #f6e2ac 72%, #fbf2dc 100%);
+  background-attachment: fixed;
+}
+
+/* 左上 / 右上枫叶枝条装饰 */
+.leaf-deco {
+  position: fixed;
+  top: -18px;
+  width: min(46vw, 520px);
+  aspect-ratio: 2 / 1;
+  background: url("assets/leaf-branch.png") no-repeat center / contain;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.92;
+  -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent 97%);
+  mask-image: linear-gradient(180deg, #000 45%, transparent 97%);
+}
+
+.leaf-deco-left {
+  left: -50px;
+}
+
+.leaf-deco-right {
+  right: -50px;
+  transform: scaleX(-1);
 }
 
 .topbar {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  background: #3b342c;
-  color: #f7f2e8;
+  padding: 18px 28px;
 }
 
-.title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 2px;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(76, 44, 16, 0.5);
+  border-radius: 4px;
+  color: #5a3a1c;
+  font-size: 14px;
+  font-weight: 700;
+  transform: rotate(-3deg);
+}
+
+.brand-text {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  color: rgba(88, 56, 22, 0.62);
 }
 
 .status {
-  padding: 6px 14px;
+  padding: 5px 13px;
+  border: 1px solid rgba(120, 82, 38, 0.16);
   border-radius: 999px;
-  font-size: 13px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 252, 240, 0.72);
+  color: rgba(88, 56, 22, 0.72);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(4px);
 }
 
 .status[data-state="online"] {
-  background: #2f7d4f;
+  color: #2f6b45;
+  border-color: rgba(47, 107, 69, 0.28);
+  background: rgba(238, 250, 238, 0.82);
 }
 
 .status[data-state="offline"] {
-  background: #a33b3b;
+  color: #a33b3b;
+  border-color: rgba(163, 59, 59, 0.28);
+  background: rgba(253, 236, 236, 0.85);
 }
 
 .layout {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
-  padding: 24px;
+  gap: 20px;
+  padding: 4px 24px 36px;
+}
+
+.hero {
+  text-align: center;
+}
+
+.hero-en {
+  margin: 0 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.55em;
+  text-transform: uppercase;
+  color: rgba(102, 68, 30, 0.55);
+  padding-left: 0.55em; /* 抵消末字间距，保持视觉居中 */
+}
+
+.hero-title {
+  margin: 0;
+  font-family: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+  font-size: clamp(28px, 4.4vw, 40px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #4a2f14;
+  text-shadow: 0 2px 0 rgba(255, 240, 200, 0.65);
+}
+
+.hero-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 12px;
+  border-radius: 4px;
+  background: #b03a2c;
+  color: #fff4e2;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  vertical-align: 4px;
+  transform: rotate(-4deg);
+  box-shadow: 0 2px 6px rgba(120, 40, 25, 0.28);
 }
 
 .game-info {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 12px 24px;
-  border-radius: 10px;
-  background: #fffaf0;
-  box-shadow: 0 4px 14px rgba(59, 52, 44, 0.12);
-  font-size: 16px;
+  gap: 10px;
+  padding: 8px 18px;
+  border: 1px solid rgba(140, 98, 48, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 252, 242, 0.94);
+  box-shadow: 0 6px 18px rgba(120, 80, 35, 0.14);
+  font-size: 14px;
 }
 
 .game-info[hidden] {
   display: none;
 }
 
+.turn-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #262322;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  opacity: 0.35;
+}
+
+.game-info[data-turn="black"] .turn-dot {
+  background: #1c1a19;
+  opacity: 1;
+}
+
+.game-info[data-turn="white"] .turn-dot {
+  background: #fffdf4;
+  border: 1px solid #b9a98c;
+  opacity: 1;
+}
+
 .turn-label {
   font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #4a3420;
+}
+
+.info-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(120, 85, 45, 0.22);
 }
 
 .countdown {
-  min-width: 72px;
-  padding: 2px 12px;
+  min-width: 54px;
+  padding: 1px 8px;
   border-radius: 6px;
-  background: #efe6d6;
+  background: rgba(126, 88, 42, 0.1);
   font-family: Consolas, "Courier New", monospace;
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-align: center;
+  color: #5a3f22;
 }
 
 .countdown[data-state="low"] {
-  background: #f8d7d7;
+  background: rgba(176, 58, 44, 0.14);
   color: #a33b3b;
 }
 
+/* 棋盘：深棕木质外框 + 内侧木面 */
 .board-area {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 600px;
+  width: 620px;
   max-width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 12px;
-  background: #c19a6b;
-  box-shadow: 0 10px 30px rgba(59, 52, 44, 0.18);
+  padding: 16px;
+  border-radius: 10px;
+  background: linear-gradient(150deg, #7c4f2d 0%, #60391c 45%, #49280f 100%);
+  box-shadow:
+    0 24px 48px rgba(74, 42, 18, 0.34),
+    0 3px 8px rgba(60, 32, 12, 0.28),
+    inset 0 1px 0 rgba(255, 220, 170, 0.28),
+    inset 0 0 0 1px rgba(38, 20, 8, 0.55);
   overflow: hidden;
 }
 
-.match-overlay {
+/* 内嵌阴影，让木面略带凹陷感 */
+.board-area::after {
+  content: "";
   position: absolute;
-  inset: 0;
+  inset: 16px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 22px rgba(88, 48, 16, 0.28);
+}
+
+#board-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* 遮罩层统一收进木框内 */
+.match-overlay,
+.result-overlay {
+  position: absolute;
+  inset: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  background: rgba(242, 237, 227, 0.92);
+  border-radius: 4px;
+  z-index: 2;
 }
 
-.match-overlay[hidden] {
+.match-overlay {
+  background: rgba(250, 240, 214, 0.93);
+}
+
+.match-overlay[hidden],
+.result-overlay[hidden] {
   display: none;
 }
 
@@ -118,56 +272,55 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 28px 32px;
-  border-radius: 12px;
-  background: #fffaf0;
-  box-shadow: 0 10px 30px rgba(59, 52, 44, 0.18);
+  padding: 30px 36px;
+  border: 1px solid rgba(140, 98, 48, 0.16);
+  border-radius: 14px;
+  background: #fdf8ec;
+  box-shadow: 0 16px 38px rgba(90, 55, 22, 0.22);
   text-align: center;
 }
 
 .match-title {
   margin: 0;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 20px;
-  letter-spacing: 2px;
+  letter-spacing: 0.2em;
+  color: #4a2f14;
 }
 
 .match-hint {
   margin: 0;
-  font-size: 14px;
-  color: #6b6156;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #7a6349;
 }
 
 .match-button {
-  padding: 10px 28px;
+  padding: 10px 30px;
   border: none;
   border-radius: 999px;
-  background: #3b342c;
-  color: #f7f2e8;
-  font-size: 15px;
+  background: #4a3020;
+  color: #fdf5e6;
+  font-size: 14px;
+  letter-spacing: 0.12em;
   cursor: pointer;
+  box-shadow: 0 6px 14px rgba(74, 48, 32, 0.28);
+  transition: background 0.2s ease, transform 0.12s ease;
 }
 
 .match-button:hover:not(:disabled) {
-  background: #55493d;
+  background: #63412b;
+  transform: translateY(-1px);
 }
 
 .match-button:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .result-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: rgba(47, 42, 36, 0.55);
-}
-
-.result-overlay[hidden] {
-  display: none;
+  background: rgba(60, 40, 20, 0.52);
 }
 
 .result-panel {
@@ -175,17 +328,20 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 28px 36px;
-  border-radius: 12px;
-  background: #fffaf0;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  padding: 30px 38px;
+  border: 1px solid rgba(140, 98, 48, 0.16);
+  border-radius: 14px;
+  background: #fdf8ec;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.34);
   text-align: center;
 }
 
 .result-title {
   margin: 0;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
   font-size: 26px;
-  letter-spacing: 2px;
+  letter-spacing: 0.18em;
+  color: #4a2f14;
 }
 
 .result-title[data-state="win"] {
@@ -198,27 +354,46 @@ body {
 
 .result-message {
   margin: 0;
-  font-size: 14px;
-  color: #6b6156;
+  font-size: 13px;
+  color: #7a6349;
 }
 
 .result-button {
   padding: 9px 26px;
   border: none;
   border-radius: 999px;
-  background: #3b342c;
-  color: #f7f2e8;
-  font-size: 15px;
+  background: #4a3020;
+  color: #fdf5e6;
+  font-size: 14px;
+  letter-spacing: 0.1em;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .result-button:hover {
-  background: #55493d;
+  background: #63412b;
 }
 
-#board-canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
+.footer-caption {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: rgba(110, 74, 34, 0.42);
+}
+
+@media (max-width: 700px) {
+  .topbar {
+    padding: 14px 18px;
+  }
+
+  .layout {
+    padding: 4px 16px 28px;
+    gap: 16px;
+  }
+
+  .leaf-deco {
+    width: 62vw;
+    opacity: 0.7;
+  }
 }

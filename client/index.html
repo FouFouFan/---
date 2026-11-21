@@ -3,18 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>五子棋联机对战</title>
+  <title>枫间五子棋</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="leaf-deco leaf-deco-left" aria-hidden="true"></div>
+  <div class="leaf-deco leaf-deco-right" aria-hidden="true"></div>
+
   <header class="topbar">
-    <h1 class="title">五子棋联机对战</h1>
+    <div class="brand">
+      <span class="brand-mark">枫</span>
+      <span class="brand-text">AUTUMN&nbsp;GOMOKU</span>
+    </div>
     <div id="connection-status" class="status" data-state="connecting">连接中…</div>
   </header>
 
   <main class="layout">
-    <div id="game-info" class="game-info" hidden>
+    <div class="hero">
+      <p class="hero-en">Autumn · Five in a Row</p>
+      <h1 class="hero-title">枫间五子棋<span class="hero-seal">弈</span></h1>
+    </div>
+
+    <div id="game-info" class="game-info" data-turn="" hidden>
+      <span class="turn-dot" aria-hidden="true"></span>
       <span id="turn-label" class="turn-label">等待开局…</span>
+      <span class="info-divider" aria-hidden="true"></span>
       <span id="countdown" class="countdown" data-state="normal">5:00</span>
     </div>
 
@@ -37,6 +50,8 @@
         </div>
       </div>
     </section>
+
+    <p class="footer-caption">Five in a Row · Gomoku · Autumn Edition</p>
   </main>
 
   <script src="app.js"></script>

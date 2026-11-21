@@ -10,10 +10,13 @@ const SIZE = 15; // 15x15 棋盘
 const CANVAS_LOGICAL_SIZE = 600; // 画布逻辑尺寸（CSS 负责缩放显示）
 const PADDING = 20; // 棋盘最外线到画布边缘的留白
 const CELL = (CANVAS_LOGICAL_SIZE - PADDING * 2) / (SIZE - 1); // 相邻交叉点间距
-const BOARD_COLOR = '#c19a6b'; // 木质底色兜底值，实际背景使用暖色渐变
-const LINE_COLOR = '#5c4033'; // 深棕色网格线
-const STAR_RADIUS = 4;
-const STONE_RADIUS = CELL * 0.42; // 棋子半径，保证相邻棋子间留有间隙
+const BOARD_TOP_COLOR = '#e7c88e'; // 木面顶部色
+const BOARD_MID_COLOR = '#dbb675'; // 木面中部色
+const BOARD_BOTTOM_COLOR = '#cda463'; // 木面底部色
+const LINE_COLOR = 'rgba(88, 58, 28, 0.62)'; // 细网格线
+const STAR_RADIUS = 3;
+const LAST_MOVE_RING_COLOR = '#c0392b'; // 最近一手标记圈
+const STONE_RADIUS = CELL * 0.44; // 棋子半径，保证相邻棋子间留有间隙
 const DROP_DURATION = 300; // 落子动画时长（毫秒）
 // 星位：四角 (3,3)/(3,11)/(11,3)/(11,11) 与天元 (7,7)
 const STAR_POINTS = [
@@ -22,18 +25,6 @@ const STAR_POINTS = [
   [7, 7],
   [11, 3],
   [11, 11],
-];
-
-// 半透明枫叶装饰点：[x, y, size, angle]，纯 Canvas 绘制，不引入外部图片
-const MAPLE_LEAVES = [
-  [80, 90, 26, 0.5],
-  [520, 70, 30, -0.6],
-  [110, 520, 28, 0.2],
-  [540, 500, 24, -0.3],
-  [300, 60, 22, 0.8],
-  [60, 300, 20, -1.0],
-  [560, 300, 22, 1.1],
-  [300, 540, 26, 0.1],
 ];
 
 const canvas = document.getElementById('board-canvas');
@@ -62,6 +53,7 @@ let countdownTimer = null; // 倒计时刷新定时器
 let turnDeadline = null; // 当前回合截止时间（服务端下发）
 let searching = false; // 是否正在匹配队列中
 let hoverCell = null; // 当前鼠标悬停的空位交叉点 {row,col}，用于落子预览
+let lastMove = null; // 最近一手落子坐标，用于绘制红色标记圈
 let hoverScheduled = false; // mousemove 的 rAF 节流标记
 let pendingHoverEvent = null; // 待处理的最新 mousemove 事件
 let animatingStones = []; // 正在播放落子动画的棋子 [{row,col,color,startTime}]
@@ -79,110 +71,48 @@ function setupCanvas() {
 const gridX = (col) => PADDING + col * CELL;
 const gridY = (row) => PADDING + row * CELL;
 
-/**
- * 绘制单枚枫叶（5 瓣简化造型 + 主叶脉）。
- * 纯 Canvas 路径绘制，不依赖外部图片。
- * @param {number} x 中心 x
- * @param {number} y 中心 y
- * @param {number} size 外半径
- * @param {number} angle 旋转弧度
- * @param {number} alpha 透明度（0-1）
- */
-function drawMapleLeaf(x, y, size, angle, alpha) {
+/** 叠加木面纹理：细密竖向木纹 + 少量深色长纹，模拟实木格面 */
+function drawWoodGrain() {
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  ctx.globalAlpha = alpha;
-
-  ctx.fillStyle = '#8b3a1f';
-  ctx.beginPath();
-  const lobes = 5;
-  for (let i = 0; i < lobes * 2; i++) {
-    const r = i % 2 === 0 ? size : size * 0.42;
-    const a = (i * Math.PI) / lobes - Math.PI / 2;
-    const px = Math.cos(a) * r;
-    const py = Math.sin(a) * r;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.fill();
-
-  // 主叶脉
-  ctx.strokeStyle = 'rgba(60, 30, 15, 0.5)';
-  ctx.lineWidth = Math.max(1, size * 0.06);
-  ctx.beginPath();
-  ctx.moveTo(0, -size * 0.9);
-  ctx.lineTo(0, size * 0.45);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-/** 叠加半透明枫叶装饰（秋日主题） */
-function drawMapleLeaves() {
-  for (const [x, y, size, angle] of MAPLE_LEAVES) {
-    drawMapleLeaf(x, y, size, angle, 0.09);
-  }
-}
-
-/** 叠加四角柔和树影（径向渐变暗角） */
-function drawTreeShadows() {
-  ctx.save();
-  const spots = [
-    [0, 0, 180],
-    [CANVAS_LOGICAL_SIZE, 0, 160],
-    [0, CANVAS_LOGICAL_SIZE, 170],
-    [CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE, 150],
-  ];
-  for (const [x, y, r] of spots) {
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(60, 35, 15, 0.18)');
-    g.addColorStop(1, 'rgba(60, 35, 15, 0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-/** 叠加木纹：几条低透明度的竖向曲线，模拟木材质感 */
-function drawWoodTexture() {
-  ctx.save();
-  for (let i = 0; i < 12; i++) {
-    const x = (i / 11) * CANVAS_LOGICAL_SIZE + Math.sin(i) * 6;
-    ctx.strokeStyle = `rgba(94, 60, 30, ${0.04 + (i % 3) * 0.02})`;
-    ctx.lineWidth = 2 + (i % 2);
+  for (let i = 0; i < 48; i++) {
+    const x = ((i + 0.5) / 48) * CANVAS_LOGICAL_SIZE + Math.sin(i * 1.7) * 3;
+    ctx.strokeStyle = `rgba(140, 96, 48, ${0.028 + (i % 4) * 0.011})`;
+    ctx.lineWidth = i % 6 === 0 ? 2 : 1;
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.bezierCurveTo(
-      x + 8,
-      CANVAS_LOGICAL_SIZE / 3,
-      x - 8,
-      (2 * CANVAS_LOGICAL_SIZE) / 3,
-      x,
-      CANVAS_LOGICAL_SIZE
-    );
+    ctx.bezierCurveTo(x + 5, 200, x - 5, 400, x + Math.sin(i) * 4, CANVAS_LOGICAL_SIZE);
     ctx.stroke();
   }
   ctx.restore();
 }
 
-/** 绘制暖色木质感底、木纹、枫叶、树影、15x15 深棕网格与星位 */
+/** 绘制木面底色、木纹、柔和光影、15x15 细网格与星位 */
 function drawBoard() {
   ctx.clearRect(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
 
-  // 暖色渐变木质背景
-  const bg = ctx.createLinearGradient(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
-  bg.addColorStop(0, '#d4a574');
-  bg.addColorStop(1, '#c19a6b');
+  // 木面竖向渐变
+  const bg = ctx.createLinearGradient(0, 0, 0, CANVAS_LOGICAL_SIZE);
+  bg.addColorStop(0, BOARD_TOP_COLOR);
+  bg.addColorStop(0.55, BOARD_MID_COLOR);
+  bg.addColorStop(1, BOARD_BOTTOM_COLOR);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
 
-  drawWoodTexture();
-  drawMapleLeaves();
-  drawTreeShadows();
+  drawWoodGrain();
+
+  // 中心柔光，模拟灯下光泽
+  const glow = ctx.createRadialGradient(300, 250, 40, 300, 300, 430);
+  glow.addColorStop(0, 'rgba(255, 240, 200, 0.22)');
+  glow.addColorStop(1, 'rgba(255, 240, 200, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
+
+  // 四周轻微暗角，突出木面层次
+  const vignette = ctx.createRadialGradient(300, 300, 230, 300, 300, 440);
+  vignette.addColorStop(0, 'rgba(116, 76, 36, 0)');
+  vignette.addColorStop(1, 'rgba(116, 76, 36, 0.2)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
 
   ctx.strokeStyle = LINE_COLOR;
   ctx.lineWidth = 1;
@@ -199,11 +129,13 @@ function drawBoard() {
     ctx.stroke();
   }
 
-  // 外边框略加粗，突出棋盘边界
-  ctx.lineWidth = 2;
-  ctx.strokeRect(gridX(0), gridY(0), gridX(SIZE - 1) - gridX(0), gridY(SIZE - 1) - gridY(0));
+  // 网格外侧一道浅描边，与木框自然衔接
+  const span = gridX(SIZE - 1) - gridX(0);
+  ctx.strokeStyle = 'rgba(92, 62, 32, 0.3)';
+  ctx.strokeRect(gridX(0) - 8, gridY(0) - 8, span + 16, span + 16);
 
-  ctx.fillStyle = LINE_COLOR;
+  // 星位：深棕小圆点
+  ctx.fillStyle = 'rgba(74, 48, 22, 0.85)';
   for (const [row, col] of STAR_POINTS) {
     ctx.beginPath();
     ctx.arc(gridX(col), gridY(row), STAR_RADIUS, 0, Math.PI * 2);
@@ -239,23 +171,31 @@ function drawStoneAt(row, col, color, scale, yOffset) {
     STONE_RADIUS
   );
   if (color === 'black') {
-    // 深棕黑 + 暖色高光
-    gradient.addColorStop(0, '#4a3525');
-    gradient.addColorStop(1, '#0d0d0d');
+    // 黑子：深色光泽，左上带柔和高光
+    gradient.addColorStop(0, '#57504a');
+    gradient.addColorStop(0.45, '#26221f');
+    gradient.addColorStop(1, '#080706');
   } else {
-    // 象牙白 + 暖色高光
-    gradient.addColorStop(0, '#fffff0');
-    gradient.addColorStop(1, '#e0d4b0');
+    // 白子：暖调象牙白，避免纯白刺眼
+    gradient.addColorStop(0, '#fffdf6');
+    gradient.addColorStop(0.5, '#f4ead6');
+    gradient.addColorStop(1, '#d6c7ac');
   }
 
   ctx.fillStyle = gradient;
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+  ctx.shadowColor = 'rgba(70, 40, 15, 0.3)';
   ctx.shadowBlur = 4;
   ctx.shadowOffsetY = 2;
 
   ctx.beginPath();
   ctx.arc(cx, cy, STONE_RADIUS, 0, Math.PI * 2);
   ctx.fill();
+
+  // 极细描边，让棋子在木面上更立体
+  ctx.shadowColor = 'rgba(0, 0, 0, 0)';
+  ctx.strokeStyle = color === 'black' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(120, 96, 60, 0.28)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -367,6 +307,10 @@ function renderAll() {
   for (const stone of animatingStones) {
     drawAnimatedStone(stone, now);
   }
+  // 最近一手：红色标记圈（落子动画播放完毕后再出现）
+  if (lastMove && !animatingSet.has(`${lastMove.row},${lastMove.col}`)) {
+    drawLastMoveMarker(lastMove.row, lastMove.col);
+  }
   // 仅在自己回合、悬停于空位时显示半透明预览棋
   if (
     hoverCell &&
@@ -387,6 +331,17 @@ function drawHoverPreview(row, col, color) {
   ctx.save();
   ctx.globalAlpha = 0.5;
   drawStone(row, col, color);
+  ctx.restore();
+}
+
+/** 绘制最近一手的红色标记圈 */
+function drawLastMoveMarker(row, col) {
+  ctx.save();
+  ctx.strokeStyle = LAST_MOVE_RING_COLOR;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(gridX(col), gridY(row), STONE_RADIUS + 4.5, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -419,6 +374,7 @@ function handleCanvasClick(event) {
 
   // 本地即时反馈；以服务端广播的结果为最终状态（T2-5 负责同步）
   board[row][col] = myColor;
+  lastMove = { row, col };
   playStoneAnimation(row, col, myColor); // 落子动画 + 音效
 
   pendingMove = { row, col };
@@ -556,6 +512,9 @@ function updateTurnLabel() {
   } else {
     turnLabelEl.textContent = '等待开局…';
   }
+
+  // 回合指示圆点跟随当前落子方颜色
+  gameInfoEl.dataset.turn = inGame && currentTurn ? currentTurn : '';
 }
 
 /**
@@ -568,6 +527,7 @@ function handleGameMessage(message) {
       gameFinished = false;
       searching = false;
       hoverCell = null;
+      lastMove = null;
       animatingStones = [];
       myColor = message.color;
       currentTurn = null;
@@ -640,6 +600,7 @@ function applyMove(row, col, color) {
     // 对手落子：播放落子动画与音效
     playStoneAnimation(row, col, color);
   }
+  lastMove = { row, col };
   renderAll();
 }
 
@@ -648,6 +609,7 @@ function rollbackPendingMove() {
   if (!pendingMove) return;
   board[pendingMove.row][pendingMove.col] = null;
   pendingMove = null;
+  lastMove = null;
   renderAll();
 }
 
