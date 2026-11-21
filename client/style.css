@@ -397,3 +397,280 @@ body {
     opacity: 0.7;
   }
 }
+
+/* ========== 个人主页 ========== */
+.profile-page {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.profile-page[hidden] {
+  display: none;
+}
+
+.pf-card {
+  padding: 20px 24px;
+  border: 1px solid rgba(140, 98, 48, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 252, 242, 0.95);
+  box-shadow: 0 8px 24px rgba(120, 80, 35, 0.12);
+}
+
+.pf-card-title {
+  margin: 0 0 14px;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  color: #4a2f14;
+}
+
+/* 档案卡片 */
+.pf-profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.pf-avatar {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4a853, #b07a2c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(120, 80, 35, 0.22);
+}
+
+.pf-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pf-avatar-ph {
+  color: #fff8e8;
+  font-size: 28px;
+  font-weight: 700;
+  font-family: "Songti SC", serif;
+}
+
+.pf-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pf-nickname {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4a2f14;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+.pf-id-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.pf-id-label {
+  color: rgba(110, 74, 34, 0.6);
+  letter-spacing: 0.08em;
+}
+
+.pf-id {
+  font-family: Consolas, "Courier New", monospace;
+  color: #5a3f22;
+  letter-spacing: 0.04em;
+}
+
+.pf-copy-btn {
+  padding: 3px 10px;
+  border: 1px solid rgba(140, 98, 48, 0.3);
+  border-radius: 6px;
+  background: rgba(255, 252, 242, 0.8);
+  color: #5a3f22;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pf-copy-btn:hover:not(:disabled) {
+  background: rgba(212, 168, 83, 0.18);
+}
+
+.pf-copy-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 战绩 */
+.pf-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.pf-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-stat-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: #4a2f14;
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-stat-label {
+  font-size: 12px;
+  color: rgba(110, 74, 34, 0.6);
+}
+
+/* 最近对局 */
+.pf-hist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(212, 168, 83, 0.08);
+  font-size: 13px;
+}
+
+.hist-result {
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 0;
+}
+
+.hist-win { background: rgba(47, 125, 79, 0.14); color: #2f7d4f; }
+.hist-loss { background: rgba(163, 59, 59, 0.12); color: #a33b3b; }
+.hist-draw { background: rgba(120, 98, 48, 0.14); color: #7a6349; }
+
+.hist-mode, .hist-color {
+  color: #7a6349;
+}
+
+.hist-turns {
+  margin-left: auto;
+  color: rgba(110, 74, 34, 0.6);
+  font-family: Consolas, monospace;
+}
+
+.hist-time {
+  color: rgba(110, 74, 34, 0.5);
+  font-size: 12px;
+  font-family: Consolas, monospace;
+}
+
+.hist-empty {
+  padding: 16px;
+  text-align: center;
+  color: rgba(110, 74, 34, 0.5);
+  font-size: 13px;
+}
+
+/* 危险区 */
+.pf-danger {
+  border-color: rgba(163, 59, 59, 0.25);
+  background: rgba(253, 240, 240, 0.6);
+}
+
+.pf-danger-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #7a4a4a;
+  line-height: 1.6;
+}
+
+.pf-danger-btn {
+  padding: 8px 18px;
+  border: 1px solid rgba(163, 59, 59, 0.4);
+  border-radius: 8px;
+  background: rgba(163, 59, 59, 0.08);
+  color: #a33b3b;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pf-danger-btn:hover {
+  background: rgba(163, 59, 59, 0.16);
+}
+
+/* 登录占位 */
+.pf-auth {
+  opacity: 0.85;
+}
+
+.pf-auth-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #7a6349;
+}
+
+.pf-auth-btn {
+  padding: 8px 18px;
+  border: 1px solid rgba(140, 98, 48, 0.2);
+  border-radius: 8px;
+  background: rgba(212, 168, 83, 0.1);
+  color: rgba(90, 63, 34, 0.6);
+  font-size: 13px;
+  cursor: not-allowed;
+}
+
+/* Toast */
+.pf-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(74, 47, 20, 0.92);
+  color: #fdf5e6;
+  font-size: 13px;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.pf-toast-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 700px) {
+  .pf-stat-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .pf-card {
+    padding: 16px 18px;
+  }
+}
