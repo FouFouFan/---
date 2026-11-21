@@ -484,7 +484,7 @@ canvas.addEventListener('mouseleave', () => {
 /**
  * WebSocket 连接（T2-1）：建立与游戏服务端的连接并展示连接状态。
  */
-const WS_URL = 'ws://localhost:3000';
+const WS_URL = 'ws://10.21.174.122:3000';
 
 const statusEl = document.getElementById('connection-status');
 
