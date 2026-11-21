@@ -67,6 +67,57 @@ gomoku/
 
 > 说明：客户端通过 `ws://localhost:3000` 连接服务端，见 `client/app.js` 顶部 `WS_URL`。
 
+## 双终端联调（局域网）
+
+两台设备连同一 Wi-Fi，一台跑服务端+静态页，另一台用浏览器访问。
+
+### 1. 确认本机局域网 IP
+
+```powershell
+Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254*' }
+```
+
+通常 WLAN 网卡的地址即为本机局域网 IP，例如 `10.21.174.122`。
+
+### 2. 启动服务端与静态服务
+
+服务端监听 `0.0.0.0:3000`（默认绑定所有网卡）：
+
+```powershell
+cd server
+npm install
+npm start
+```
+
+静态服务（端口 8080）：
+
+```powershell
+npx serve client -l 8080
+```
+
+### 3. 放行防火墙（首次需要）
+
+Windows 防火墙需放行 3000/TCP 与 8080/TCP 入站。若首次启动时已弹窗允许 node.exe，则无需重复操作。手动放行命令：
+
+```powershell
+# 以管理员身份运行 PowerShell
+New-NetFirewallRule -DisplayName "gomoku-3000" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "gomoku-8080" -Direction Inbound -LocalPort 8080 -Protocol TCP -Action Allow
+```
+
+### 4. 第二台设备访问
+
+浏览器打开 `http://<本机局域网IP>:8080`，例如 `http://10.21.174.122:8080`。
+
+> 当前 `client/app.js` 的 `WS_URL` 硬编码为 `ws://10.21.174.122:3000`。若换网络/换设备导致 IP 变化，需修改该常量后刷新页面（v2.0 将支持 `?server=` 动态配置，见 T4-8）。
+
+### 5. 验证清单
+
+- [ ] 本机浏览器访问 `http://localhost:8080` 正常
+- [ ] 第二设备浏览器访问 `http://<IP>:8080` 正常（HTTP 200）
+- [ ] 第二设备 WebSocket 能连到 `ws://<IP>:3000`
+- [ ] 两设备各自点击匹配，进入同一 `roomId`
+
 ## 通信协议
 
 WebSocket + JSON，所有消息均为带 `type` 字段的对象。

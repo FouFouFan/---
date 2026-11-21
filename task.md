@@ -34,9 +34,9 @@
 目标：可回滚、可测试、可在两个终端上验证。退出条件：`npm test` 可运行，两台设备能互相访问服务端。
 
 - [x] **T0-1 评审并冻结需求优先级** ｜ 文件：`spec.md` ｜ 验收：P0/P1/P2 无歧义，Out of Scope 确认 ✅ 2026-11-21 评审通过，spec.md 状态已标记冻结
-- [ ] **T0-2 建立 v1 基线快照** ｜ 文件：仓库/目录备份 ｜ 验收：可一键回到当前可运行版本；记录 `node -v`、依赖版本
-- [ ] **T0-3 准备双终端联调环境** ｜ 文件：`README` 草稿 ｜ 验收：服务端 `0.0.0.0:3000`、静态服务 8080、防火墙放行、第二设备可访问
-- [ ] **T0-4 建立测试脚手架** ｜ 文件：`test/`、根 `package.json`（新增 `test` 脚本）｜ 验收：`npm test` 用 `node:test` 跑通示例用例；客户端纯逻辑支持 `module.exports`
+- [x] **T0-2 建立 v1 基线快照** ｜ 文件：仓库/目录备份 ｜ 验收：可一键回到当前可运行版本；记录 `node -v`、依赖版本 ✅ 2026-11-21 git tag `v1.0-baseline` @ b47475b；Node v26.13.1 / npm 11.20.0 / ws 8.23.0
+- [x] **T0-3 准备双终端联调环境** ｜ 文件：`README` 草稿 ｜ 验收：服务端 `0.0.0.0:3000`、静态服务 8080、防火墙放行、第二设备可访问 ✅ 2026-11-21 验证：0.0.0.0:3000/8080 均监听；node.exe 入站放行；LAN HTTP 200 + WS 连接成功；README 已补双终端联调章节
+- [x] **T0-4 建立测试脚手架** ｜ 文件：`test/`、根 `package.json`（新增 `test` 脚本）｜ 验收：`npm test` 用 `node:test` 跑通示例用例；客户端纯逻辑支持 `module.exports` ✅ 2026-11-21 新建 package.json(test=node --test test/)、test/sample.test.js、test/fixtures/sample-logic.js；npm test 3/3 通过；双环境模式（Node require + 浏览器 window.Gomoku）均验证
 - [ ] **T0-5 记录 v1 行为基线** ｜ 文件：`docs/archive/` ｜ 验收：协议字段、默认文案、5 分钟时限、断线判负均有记录，供回归比对
 
 ### M1 本地档案与数据层（2.5 天）
