@@ -6,12 +6,7 @@
     module.exports = factory();
   } else {
     root.Gomoku = root.Gomoku || {};
-    var api = factory();
-    for (var key in api) {
-      if (Object.prototype.hasOwnProperty.call(api, key)) {
-        root.Gomoku[key] = api[key];
-      }
-    }
+    root.Gomoku.Store = factory();
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';

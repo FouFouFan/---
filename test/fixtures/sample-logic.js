@@ -5,14 +5,9 @@
     // Node 环境：供 node:test 直接 require
     module.exports = factory();
   } else {
-    // 浏览器环境：挂载到全局命名空间 window.Gomoku
+    // 浏览器环境：挂载到全局命名空间 window.Gomoku.SampleLogic
     root.Gomoku = root.Gomoku || {};
-    var api = factory();
-    for (var key in api) {
-      if (Object.prototype.hasOwnProperty.call(api, key)) {
-        root.Gomoku[key] = api[key];
-      }
-    }
+    root.Gomoku.SampleLogic = factory();
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
