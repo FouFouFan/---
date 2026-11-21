@@ -10,10 +10,11 @@ const SIZE = 15; // 15x15 棋盘
 const CANVAS_LOGICAL_SIZE = 600; // 画布逻辑尺寸（CSS 负责缩放显示）
 const PADDING = 20; // 棋盘最外线到画布边缘的留白
 const CELL = (CANVAS_LOGICAL_SIZE - PADDING * 2) / (SIZE - 1); // 相邻交叉点间距
-const BOARD_COLOR = '#e8c98f';
-const LINE_COLOR = '#6b5333';
+const BOARD_COLOR = '#c19a6b'; // 木质底色兜底值，实际背景使用暖色渐变
+const LINE_COLOR = '#5c4033'; // 深棕色网格线
 const STAR_RADIUS = 4;
 const STONE_RADIUS = CELL * 0.42; // 棋子半径，保证相邻棋子间留有间隙
+const DROP_DURATION = 300; // 落子动画时长（毫秒）
 // 星位：四角 (3,3)/(3,11)/(11,3)/(11,11) 与天元 (7,7)
 const STAR_POINTS = [
   [3, 3],
@@ -21,6 +22,18 @@ const STAR_POINTS = [
   [7, 7],
   [11, 3],
   [11, 11],
+];
+
+// 半透明枫叶装饰点：[x, y, size, angle]，纯 Canvas 绘制，不引入外部图片
+const MAPLE_LEAVES = [
+  [80, 90, 26, 0.5],
+  [520, 70, 30, -0.6],
+  [110, 520, 28, 0.2],
+  [540, 500, 24, -0.3],
+  [300, 60, 22, 0.8],
+  [60, 300, 20, -1.0],
+  [560, 300, 22, 1.1],
+  [300, 540, 26, 0.1],
 ];
 
 const canvas = document.getElementById('board-canvas');
@@ -51,6 +64,9 @@ let searching = false; // 是否正在匹配队列中
 let hoverCell = null; // 当前鼠标悬停的空位交叉点 {row,col}，用于落子预览
 let hoverScheduled = false; // mousemove 的 rAF 节流标记
 let pendingHoverEvent = null; // 待处理的最新 mousemove 事件
+let animatingStones = []; // 正在播放落子动画的棋子 [{row,col,color,startTime}]
+let animFrameId = null; // 落子动画的 rAF id
+let audioCtx = null; // 落子音效的 AudioContext（首次用户交互时初始化）
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -63,12 +79,110 @@ function setupCanvas() {
 const gridX = (col) => PADDING + col * CELL;
 const gridY = (row) => PADDING + row * CELL;
 
-/** 绘制木色底、15x15 网格与星位 */
+/**
+ * 绘制单枚枫叶（5 瓣简化造型 + 主叶脉）。
+ * 纯 Canvas 路径绘制，不依赖外部图片。
+ * @param {number} x 中心 x
+ * @param {number} y 中心 y
+ * @param {number} size 外半径
+ * @param {number} angle 旋转弧度
+ * @param {number} alpha 透明度（0-1）
+ */
+function drawMapleLeaf(x, y, size, angle, alpha) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalAlpha = alpha;
+
+  ctx.fillStyle = '#8b3a1f';
+  ctx.beginPath();
+  const lobes = 5;
+  for (let i = 0; i < lobes * 2; i++) {
+    const r = i % 2 === 0 ? size : size * 0.42;
+    const a = (i * Math.PI) / lobes - Math.PI / 2;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // 主叶脉
+  ctx.strokeStyle = 'rgba(60, 30, 15, 0.5)';
+  ctx.lineWidth = Math.max(1, size * 0.06);
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 0.9);
+  ctx.lineTo(0, size * 0.45);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/** 叠加半透明枫叶装饰（秋日主题） */
+function drawMapleLeaves() {
+  for (const [x, y, size, angle] of MAPLE_LEAVES) {
+    drawMapleLeaf(x, y, size, angle, 0.09);
+  }
+}
+
+/** 叠加四角柔和树影（径向渐变暗角） */
+function drawTreeShadows() {
+  ctx.save();
+  const spots = [
+    [0, 0, 180],
+    [CANVAS_LOGICAL_SIZE, 0, 160],
+    [0, CANVAS_LOGICAL_SIZE, 170],
+    [CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE, 150],
+  ];
+  for (const [x, y, r] of spots) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(60, 35, 15, 0.18)');
+    g.addColorStop(1, 'rgba(60, 35, 15, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** 叠加木纹：几条低透明度的竖向曲线，模拟木材质感 */
+function drawWoodTexture() {
+  ctx.save();
+  for (let i = 0; i < 12; i++) {
+    const x = (i / 11) * CANVAS_LOGICAL_SIZE + Math.sin(i) * 6;
+    ctx.strokeStyle = `rgba(94, 60, 30, ${0.04 + (i % 3) * 0.02})`;
+    ctx.lineWidth = 2 + (i % 2);
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.bezierCurveTo(
+      x + 8,
+      CANVAS_LOGICAL_SIZE / 3,
+      x - 8,
+      (2 * CANVAS_LOGICAL_SIZE) / 3,
+      x,
+      CANVAS_LOGICAL_SIZE
+    );
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** 绘制暖色木质感底、木纹、枫叶、树影、15x15 深棕网格与星位 */
 function drawBoard() {
   ctx.clearRect(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
 
-  ctx.fillStyle = BOARD_COLOR;
+  // 暖色渐变木质背景
+  const bg = ctx.createLinearGradient(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
+  bg.addColorStop(0, '#d4a574');
+  bg.addColorStop(1, '#c19a6b');
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
+
+  drawWoodTexture();
+  drawMapleLeaves();
+  drawTreeShadows();
 
   ctx.strokeStyle = LINE_COLOR;
   ctx.lineWidth = 1;
@@ -98,52 +212,160 @@ function drawBoard() {
 }
 
 /**
- * 在交叉点 (row, col) 绘制一枚棋子。
+ * 在交叉点 (row, col) 绘制一枚棋子，支持缩放与垂直位移（用于落子动画）。
+ * 以 (gridX(col), gridY(row) - yOffset) 为中心按 scale 缩放绘制。
  * @param {number} row 行索引 0–14
  * @param {number} col 列索引 0–14
  * @param {'black'|'white'} color 棋子颜色
+ * @param {number} scale 缩放比例
+ * @param {number} yOffset 垂直向下位移（像素），正数表示在交叉点下方
  */
-function drawStone(row, col, color) {
-  const x = gridX(col);
-  const y = gridY(row);
+function drawStoneAt(row, col, color, scale, yOffset) {
+  const cx = gridX(col);
+  const cy = gridY(row) - yOffset;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  ctx.translate(-cx, -cy);
 
   // 黑白棋子使用不同渐变，表现立体感
   const gradient = ctx.createRadialGradient(
-    x - STONE_RADIUS / 3,
-    y - STONE_RADIUS / 3,
+    cx - STONE_RADIUS / 3,
+    cy - STONE_RADIUS / 3,
     STONE_RADIUS / 6,
-    x,
-    y,
+    cx,
+    cy,
     STONE_RADIUS
   );
   if (color === 'black') {
-    gradient.addColorStop(0, '#6f6f6f');
+    // 深棕黑 + 暖色高光
+    gradient.addColorStop(0, '#4a3525');
     gradient.addColorStop(1, '#0d0d0d');
   } else {
-    gradient.addColorStop(0, '#ffffff');
-    gradient.addColorStop(1, '#c9c9c9');
+    // 象牙白 + 暖色高光
+    gradient.addColorStop(0, '#fffff0');
+    gradient.addColorStop(1, '#e0d4b0');
   }
 
-  ctx.save();
+  ctx.fillStyle = gradient;
   ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
   ctx.shadowBlur = 4;
   ctx.shadowOffsetY = 2;
 
-  ctx.fillStyle = gradient;
   ctx.beginPath();
-  ctx.arc(x, y, STONE_RADIUS, 0, Math.PI * 2);
+  ctx.arc(cx, cy, STONE_RADIUS, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
 
-/** 重绘棋盘与全部棋子，并在空位上叠加悬停预览 */
+/** 在交叉点绘制一枚标准棋子（缩放 1、无位移） */
+function drawStone(row, col, color) {
+  drawStoneAt(row, col, color, 1, 0);
+}
+
+/** 缓动：二次减速 */
+function easeOutQuad(t) {
+  return 1 - (1 - t) * (1 - t);
+}
+
+/** 缓动：带回弹的减速（用于弹性缩放） */
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+/**
+ * 绘制落子动画中的棋子：从上方落下（yOffset 由大到 0），
+ * 缩放从 1.2 弹性回落到 1.0，持续约 DROP_DURATION 毫秒。
+ */
+function drawAnimatedStone(stone, now) {
+  const t = Math.min(1, (now - stone.startTime) / DROP_DURATION);
+  const yOffset = (1 - easeOutQuad(t)) * 80; // 从上方 80px 处落下
+  const scale = 1 + 0.2 * (1 - easeOutBack(t)); // 1.2 → 1.0 带回弹
+  drawStoneAt(stone.row, stone.col, stone.color, scale, yOffset);
+}
+
+/** 落子动画主循环：还有动画中的棋子时持续重绘 */
+function renderTick() {
+  animFrameId = null;
+  const now = performance.now();
+  animatingStones = animatingStones.filter((s) => now - s.startTime < DROP_DURATION);
+  renderAll();
+  if (animatingStones.length > 0) scheduleRender();
+}
+
+/** 启动落子动画循环（幂等） */
+function scheduleRender() {
+  if (animFrameId) return;
+  animFrameId = requestAnimationFrame(renderTick);
+}
+
+/**
+ * 为一枚新落下的棋子启动动画并播放音效。
+ * 落子方（本地点击或对手落子）统一调用此函数。
+ */
+function playStoneAnimation(row, col, color) {
+  animatingStones.push({ row, col, color, startTime: performance.now() });
+  scheduleRender();
+  playDropSound(color);
+}
+
+/**
+ * 初始化并恢复 AudioContext。
+ * 必须在用户交互（点击）中调用，以兼容移动端自动播放策略。
+ */
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+/**
+ * 落子音效：用 Web Audio API 合成，不依赖外部音频文件。
+ * 黑子 400Hz、白子 500Hz，正弦波快速衰减约 100ms。
+ */
+function playDropSound(color) {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+
+  const freq = color === 'black' ? 400 : 500;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+
+  const t = ctx.currentTime;
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.3, t + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.12);
+}
+
+/** 重绘棋盘与全部棋子，并在空位上叠加悬停预览，叠加落子动画 */
 function renderAll() {
   drawBoard();
+  const now = performance.now();
+  const animatingSet = new Set(
+    animatingStones.map((s) => `${s.row},${s.col}`)
+  );
   for (let row = 0; row < SIZE; row++) {
     for (let col = 0; col < SIZE; col++) {
       const color = board[row][col];
-      if (color) drawStone(row, col, color);
+      // 正在播放落子动画的棋子交由动画帧绘制，避免与静态绘制重叠
+      if (color && !animatingSet.has(`${row},${col}`)) drawStone(row, col, color);
     }
+  }
+  for (const stone of animatingStones) {
+    drawAnimatedStone(stone, now);
   }
   // 仅在自己回合、悬停于空位时显示半透明预览棋
   if (
@@ -192,9 +414,12 @@ function handleCanvasClick(event) {
   if (currentTurn !== myColor) return; // 不是自己的回合
   if (board[row][col] !== null) return; // 该位置已有棋子
 
+  // 激活音频上下文（首次用户交互，兼容移动端自动播放策略）
+  ensureAudioCtx();
+
   // 本地即时反馈；以服务端广播的结果为最终状态（T2-5 负责同步）
   board[row][col] = myColor;
-  drawStone(row, col, myColor);
+  playStoneAnimation(row, col, myColor); // 落子动画 + 音效
 
   pendingMove = { row, col };
   hoverCell = null; // 落子后清除悬停预览
@@ -343,6 +568,7 @@ function handleGameMessage(message) {
       gameFinished = false;
       searching = false;
       hoverCell = null;
+      animatingStones = [];
       myColor = message.color;
       currentTurn = null;
       pendingMove = null;
@@ -389,6 +615,7 @@ function handleGameMessage(message) {
       inGame = false;
       currentTurn = null;
       hoverCell = null;
+      animatingStones = [];
       stopCountdown();
       updateTurnLabel();
       renderAll(); // 重绘以清除残留的悬停预览
@@ -403,9 +630,15 @@ function handleGameMessage(message) {
 
 /** 应用服务端广播的落子（服务端为权威状态） */
 function applyMove(row, col, color) {
+  const isOwnEcho =
+    pendingMove && pendingMove.row === row && pendingMove.col === col;
   board[row][col] = color;
-  if (pendingMove && pendingMove.row === row && pendingMove.col === col) {
+  if (isOwnEcho) {
+    // 自己落子的服务端回显：点击时已播放过动画与音效，不再重复
     pendingMove = null;
+  } else {
+    // 对手落子：播放落子动画与音效
+    playStoneAnimation(row, col, color);
   }
   renderAll();
 }
@@ -466,6 +699,7 @@ resultButtonEl.addEventListener('click', () => {
 });
 
 matchButtonEl.addEventListener('click', () => {
+  ensureAudioCtx(); // 首次用户交互时解锁音频上下文
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     showMatchPanel('尚未连接服务器，请稍后重试', '开始匹配', true);
     return;
