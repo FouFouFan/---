@@ -1,8 +1,9 @@
 # 枫间五子棋 · 功能拓展需求规格说明书
 
 > 文档版本：v2.0（规划稿）
-> 状态：待评审 / 待开发
+> 状态：已冻结 / 开发中（T0-1 评审通过）
 > 最后更新：2026-11-21
+> 冻结备注：P0/P1/P2 划分无歧义；RULE-04(P0) 的 resign/draw 文案在 PVP-10/11(P1) 未交付时，AI 模式 draw 由 AI-07 支撑，PvP resign 降级为 disconnect 文案（见 5.6），不阻塞 P0 发布。
 > 适用范围：`D:\gomoku` 当前 v1.0 联机对战版本之上的功能拓展
 > 配套文档：[task.md](task.md) · [checklist.md](checklist.md)
 > v1.0 基线存档：[spec-v1.0.md](docs/archive/spec-v1.0.md) · [task-v1.0.md](docs/archive/task-v1.0.md) · [checklist-v1.0.md](docs/archive/checklist-v1.0.md)
