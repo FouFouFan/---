@@ -43,7 +43,7 @@
 
 目标：身份与战绩可持久化，页面不直接碰 `localStorage`。退出条件：刷新后档案/战绩保留；存储异常可降级。
 
-- [ ] **T1-1 存储基础模块** ｜ 文件：`client/store.js`、`test/store.test.js` ｜ 依赖：T0-4 ｜ 验收：AUTH-01/04、PROF-09/11；含可用性探测、命名空间、内存降级、迁移备份
+- [x] **T1-1 存储基础模块** ｜ 文件：`client/store.js`、`test/store.test.js` ｜ 依赖：T0-4 ｜ 验收：AUTH-01/04、PROF-09/11；含可用性探测、命名空间、内存降级、迁移备份 ✅ 2026-11-21 新建 client/store.js（available/get/set/remove/backup/clearAll，gomoku.* 命名空间，内存降级，损坏JSON回退）+ test/store.test.js（14用例）；npm test 17/17 通过
 - [ ] **T1-2 档案模块** ｜ 文件：`client/profile-store.js`、`test/profile-store.test.js` ｜ 依赖：T1-1 ｜ 验收：PROF-01/04/07/08/10；默认档案、ID 生成、昵称校验、订阅、reset
 - [ ] **T1-3 战绩模块** ｜ 文件：`client/stats-store.js`、`test/stats-store.test.js` ｜ 依赖：T1-1 ｜ 验收：STAT-01~06；幂等、连胜规则、history 环形 20 条、`games = wins + losses + draws`
 - [ ] **T1-4 设置模块** ｜ 文件：`client/settings-store.js` ｜ 依赖：T1-1 ｜ 验收：SET-01/02；音效、难度、执子偏好持久化，非法值回退
