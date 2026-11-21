@@ -45,7 +45,7 @@
 
 - [x] **T1-1 存储基础模块** ｜ 文件：`client/store.js`、`test/store.test.js` ｜ 依赖：T0-4 ｜ 验收：AUTH-01/04、PROF-09/11；含可用性探测、命名空间、内存降级、迁移备份 ✅ 2026-11-21 新建 client/store.js（available/get/set/remove/backup/clearAll，gomoku.* 命名空间，内存降级，损坏JSON回退）+ test/store.test.js（14用例）；npm test 17/17 通过
 - [x] **T1-2 档案模块** ｜ 文件：`client/profile-store.js`、`test/profile-store.test.js` ｜ 依赖：T1-1 ｜ 验收：PROF-01/04/07/08/10；默认档案、ID 生成、昵称校验、订阅、reset ✅ 2026-11-21 新建 profile-store.js（get/update/reset/subscribe/formatPlayerId，gm_+12位base36，昵称1-12码点+过滤控制/零宽字符，playerId不可改，头像白名单）+ 18用例；npm test 35/35 通过；浏览器 Store→ProfileStore 依赖链验证通过
-- [ ] **T1-3 战绩模块** ｜ 文件：`client/stats-store.js`、`test/stats-store.test.js` ｜ 依赖：T1-1 ｜ 验收：STAT-01~06；幂等、连胜规则、history 环形 20 条、`games = wins + losses + draws`
+- [x] **T1-3 战绩模块** ｜ 文件：`client/stats-store.js`、`test/stats-store.test.js` ｜ 依赖：T1-1 ｜ 验收：STAT-01~06；幂等、连胜规则、history 环形 20 条、`games = wins + losses + draws` ✅ 2026-11-21 新建 stats-store.js（get/record/reset，对局ID幂等去重，连胜累加/输和重置，history FIFO 20条，games恒等）+ 15用例；npm test 50/50 通过
 - [ ] **T1-4 设置模块** ｜ 文件：`client/settings-store.js` ｜ 依赖：T1-1 ｜ 验收：SET-01/02；音效、难度、执子偏好持久化，非法值回退
 - [ ] **T1-5 个人主页视图** ｜ 文件：`client/profile-view.js`、`client/index.html`、`client/style.css` ｜ 依赖：T1-2、T1-3 ｜ 验收：PROF-02/03/12；资料、ID 复制、统计、最近对局、危险区、登录占位
 - [ ] **T1-6 编辑资料交互** ｜ 文件：`client/profile-view.js` ｜ 依赖：T1-5 ｜ 验收：PROF-04/05；字数限制、未保存离开提示、保存 toast、头像选中态
