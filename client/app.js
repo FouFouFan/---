@@ -48,6 +48,9 @@ let gameFinished = false; // 对局是否已结束
 let countdownTimer = null; // 倒计时刷新定时器
 let turnDeadline = null; // 当前回合截止时间（服务端下发）
 let searching = false; // 是否正在匹配队列中
+let hoverCell = null; // 当前鼠标悬停的空位交叉点 {row,col}，用于落子预览
+let hoverScheduled = false; // mousemove 的 rAF 节流标记
+let pendingHoverEvent = null; // 待处理的最新 mousemove 事件
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -133,7 +136,7 @@ function drawStone(row, col, color) {
   ctx.restore();
 }
 
-/** 重绘棋盘与全部棋子 */
+/** 重绘棋盘与全部棋子，并在空位上叠加悬停预览 */
 function renderAll() {
   drawBoard();
   for (let row = 0; row < SIZE; row++) {
@@ -142,6 +145,27 @@ function renderAll() {
       if (color) drawStone(row, col, color);
     }
   }
+  // 仅在自己回合、悬停于空位时显示半透明预览棋
+  if (
+    hoverCell &&
+    inGame &&
+    !gameFinished &&
+    currentTurn === myColor &&
+    board[hoverCell.row][hoverCell.col] === null
+  ) {
+    drawHoverPreview(hoverCell.row, hoverCell.col, myColor);
+  }
+}
+
+/**
+ * 绘制悬停预览：以 0.5 透明度画一枚当前玩家颜色的棋子。
+ * 用 save/restore 包裹，避免污染全局绘图状态。
+ */
+function drawHoverPreview(row, col, color) {
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  drawStone(row, col, color);
+  ctx.restore();
 }
 
 /**
@@ -173,6 +197,7 @@ function handleCanvasClick(event) {
   drawStone(row, col, myColor);
 
   pendingMove = { row, col };
+  hoverCell = null; // 落子后清除悬停预览
   // 等待服务端返回下一回合的 turn_start，避免同一回合重复落子
   currentTurn = null;
   updateTurnLabel();
@@ -180,6 +205,56 @@ function handleCanvasClick(event) {
 }
 
 canvas.addEventListener('click', handleCanvasClick);
+
+/** 根据鼠标位置更新悬停预览，并按需重绘 */
+function updateHover(event) {
+  // 不在自己回合、对局未进行时不显示预览
+  if (!inGame || gameFinished || currentTurn !== myColor) {
+    if (hoverCell) {
+      hoverCell = null;
+      renderAll();
+    }
+    return;
+  }
+
+  const { row, col } = pointToCell(event);
+  // 越界或已占用的位置不显示预览
+  if (row < 0 || row >= SIZE || col < 0 || col >= SIZE || board[row][col] !== null) {
+    if (hoverCell) {
+      hoverCell = null;
+      renderAll();
+    }
+    return;
+  }
+
+  // 仅在交叉点变化时重绘，减少无意义重绘
+  if (!hoverCell || hoverCell.row !== row || hoverCell.col !== col) {
+    hoverCell = { row, col };
+    renderAll();
+  }
+}
+
+/** mousemove 处理：用 requestAnimationFrame 节流，避免高频重绘卡顿 */
+function handleCanvasMouseMove(event) {
+  pendingHoverEvent = event;
+  if (hoverScheduled) return;
+  hoverScheduled = true;
+  requestAnimationFrame(() => {
+    hoverScheduled = false;
+    if (pendingHoverEvent) {
+      updateHover(pendingHoverEvent);
+      pendingHoverEvent = null;
+    }
+  });
+}
+
+canvas.addEventListener('mousemove', handleCanvasMouseMove);
+canvas.addEventListener('mouseleave', () => {
+  if (hoverCell) {
+    hoverCell = null;
+    renderAll();
+  }
+});
 
 /**
  * WebSocket 连接（T2-1）：建立与游戏服务端的连接并展示连接状态。
@@ -267,6 +342,7 @@ function handleGameMessage(message) {
       inGame = true;
       gameFinished = false;
       searching = false;
+      hoverCell = null;
       myColor = message.color;
       currentTurn = null;
       pendingMove = null;
@@ -312,8 +388,10 @@ function handleGameMessage(message) {
       gameFinished = true;
       inGame = false;
       currentTurn = null;
+      hoverCell = null;
       stopCountdown();
       updateTurnLabel();
+      renderAll(); // 重绘以清除残留的悬停预览
       showResultPanel(message.winner, message.reason);
       console.log('[game] over:', message.winner, message.reason);
       break;
