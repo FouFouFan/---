@@ -49,6 +49,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .brand-mark {
@@ -488,7 +490,8 @@ body {
 }
 
 .mode-card:focus-visible,
-.user-chip:focus-visible {
+.user-chip:focus-visible,
+.brand:focus-visible {
   outline: 3px solid #b03a2c;
   outline-offset: 3px;
 }

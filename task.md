@@ -59,7 +59,7 @@
 
 - [x] **T2-1 Hash 路由** ｜ 文件：`client/router.js`、`test/router.test.js` ｜ 依赖：T1-5 ｜ 验收：NAV-02；`#/home|profile|ai|match|game`、未知回首页、视图卸载清理定时器 ✅ 2026-11-25 新建 router.js（create(win) 工厂可注入 mock，parseHash 去 query/尾斜杠，未知/未注册回 #/home，mount 返回 false 重定向，卸载自动 clearTimeout/clearInterval 与 onCleanup）+ 11用例；index.html 接入 #/home↔#/profile 互斥路由（ai/match/game 待 T3-5/T4-7/T5-1 注册）；npm test 91/91 通过
 - [x] **T2-2 首页模式选择** ｜ 文件：`client/index.html`、`client/style.css` ｜ 依赖：T2-1 ｜ 验收：NAV-01/04；双卡片、连接状态、版本号、键盘可达 ✅ 2026-11-25 首页新增副标题「落叶之间，手谈一局」+人机/双人双卡片（button 原生键盘可达+focus-visible 描边）+版本号 v2.0；顶栏加用户芯片（头像+昵称，点击进 #/profile，订阅档案同步）；注册 #/match 路由挂载 v1 联机界面，三视图互斥；npm test 91/91 通过
-- [ ] **T2-3 对局离开守卫** ｜ 文件：`client/router.js`、`client/app.js` ｜ 依赖：T2-1 ｜ 验收：NAV-03；`beforeunload`、路由确认、确认后按 5.6 退出语义处理
+- [x] **T2-3 对局离开守卫** ｜ 文件：`client/router.js`、`client/app.js` ｜ 依赖：T2-1 ｜ 验收：NAV-03；`beforeunload`、路由确认、确认后按 5.6 退出语义处理 ✅ 2026-11-25 router.js 新增 setLeaveGuard（取消恢复 hash 且不卸载，确认后清理）+2用例；app.js 对局开始/终局同步守卫，确认后关闭 WS 按 disconnect 判负，beforeunload 覆盖刷新/关页；品牌改为 #/home 原生链接；npm test 93/93 通过（D-5/D-6 浏览器交互待人工验收）
 - [ ] **T2-4 响应式与触屏** ｜ 文件：`client/style.css` ｜ 依赖：T2-2 ｜ 验收：NAV-05；360/768/1280 三档、棋盘不溢出、触屏无悬停预览
 - [ ] **T2-5 连接策略** ｜ 文件：`client/app.js` ｜ 依赖：T2-2 ｜ 验收：NAV-07；启动静默连接、失败降级 AI、手动重试、不重复弹窗
 - [ ] **T2-6 音效与动效偏好** ｜ 文件：`client/settings-store.js`、`client/style.css` ｜ 依赖：T1-4 ｜ 验收：SET-01/02；关闭音效立即生效、reduced-motion 关闭下落动画

@@ -173,6 +173,53 @@ test('首页自身 mount 返回 false 不会无限递归', () => {
   assert.equal(log.filter((s) => s === 'mount:home').length, 1);
 });
 
+// ---------- 对局离开守卫（NAV-03） ----------
+
+test('离开守卫取消时恢复原 hash，不卸载当前视图或清理资源', () => {
+  const win = makeWin('#/match');
+  const log = [];
+  const r = Router.create(win);
+  r.register('home', makeView(log, 'home'));
+  r.register('match', makeView(log, 'match'));
+  r.start();
+
+  let calls = 0;
+  r.setLeaveGuard((transition) => {
+    calls += 1;
+    assert.deepEqual(transition, { from: 'match', to: 'home' });
+    return false;
+  });
+  win.setHash('#/home'); // 与浏览器后退触发的 hashchange 相同
+
+  assert.equal(calls, 1);
+  assert.equal(r.currentName(), 'match');
+  assert.equal(win.location.hash, '#/match');
+  assert.deepEqual(log, ['mount:match']);
+  assert.deepEqual(win.calls.clearTimeout, []);
+  assert.deepEqual(win.calls.clearInterval, []);
+});
+
+test('离开守卫确认后继续切换；守卫自行清除后不拦截后续导航', () => {
+  const win = makeWin('#/match');
+  const log = [];
+  const r = Router.create(win);
+  r.register('home', makeView(log, 'home'));
+  r.register('match', makeView(log, 'match'));
+  r.start();
+
+  r.setLeaveGuard(() => {
+    r.setLeaveGuard(null); // 模拟确认退出后终结对局状态
+    return true;
+  });
+  win.setHash('#/home');
+  assert.equal(r.currentName(), 'home');
+  assert.ok(log.includes('unmount:match'));
+  assert.ok(log.includes('cleanup:match'));
+
+  win.setHash('#/match');
+  assert.equal(r.currentName(), 'match');
+});
+
 test('navigate() 修改 hash 并触发路由', () => {
   const win = makeWin('#/home');
   const log = [];

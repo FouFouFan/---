@@ -60,6 +60,8 @@ let animatingStones = []; // 正在播放落子动画的棋子 [{row,col,color,s
 let animFrameId = null; // 落子动画的 rAF id
 let audioCtx = null; // 落子音效的 AudioContext（首次用户交互时初始化）
 
+const LEAVE_CONFIRM_TEXT = '离开将结束当前对局，退出将断开连接并判负。确定继续吗？';
+
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
   const dpr = window.devicePixelRatio || 1;
@@ -517,6 +519,42 @@ function updateTurnLabel() {
   gameInfoEl.dataset.turn = inGame && currentTurn ? currentTurn : '';
 }
 
+/** 仅在有效对局中启用路由离开守卫，终局后立即解除。 */
+function syncLeaveGuard() {
+  const router = window.Gomoku && window.Gomoku.router;
+  if (router) router.setLeaveGuard(inGame && !gameFinished ? confirmLeaveGame : null);
+}
+
+/** 路由/后退确认：取消则留局；确认后按 5.6 降级为断线，由服务端判负。 */
+function confirmLeaveGame() {
+  if (!inGame || gameFinished) return true;
+  if (!window.confirm(LEAVE_CONFIRM_TEXT)) return false;
+
+  inGame = false;
+  gameFinished = true;
+  searching = false;
+  currentTurn = null;
+  pendingMove = null;
+  hoverCell = null;
+  animatingStones = [];
+  stopCountdown();
+  updateTurnLabel();
+  syncLeaveGuard();
+
+  // resign 尚未由服务端交付；当前关闭连接，服务端按 disconnect 判负。
+  if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+  return true;
+}
+
+/** 刷新/关页提示；只有用户确认离开并由浏览器卸载后，连接才会断开。 */
+function handleBeforeUnload(event) {
+  if (!inGame || gameFinished) return;
+  event.preventDefault();
+  event.returnValue = '';
+}
+
+window.addEventListener('beforeunload', handleBeforeUnload);
+
 /**
  * 处理服务端消息：同步对局状态（T2-5）。
  */
@@ -539,6 +577,7 @@ function handleGameMessage(message) {
       countdownEl.textContent = '5:00';
       countdownEl.dataset.state = 'normal';
       updateTurnLabel();
+      syncLeaveGuard();
       for (const row of board) row.fill(null);
       renderAll();
       break;
@@ -578,6 +617,7 @@ function handleGameMessage(message) {
       animatingStones = [];
       stopCountdown();
       updateTurnLabel();
+      syncLeaveGuard();
       renderAll(); // 重绘以清除残留的悬停预览
       showResultPanel(message.winner, message.reason);
       console.log('[game] over:', message.winner, message.reason);

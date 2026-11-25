@@ -2,6 +2,7 @@
 // - 未知/未注册路由回首页；空 hash 启动时定位 #/home
 // - 视图卸载时调用 unmount() 并自动清理经 ctx 注册的定时器与清理回调
 // - mount 返回 false 表示拒绝进入（如 #/game 无可恢复对局），重定向首页
+// - setLeaveGuard(fn)：fn 返回 false 时取消导航并恢复当前 hash（NAV-03）
 // 双环境：Node require（注入 mock window 测试）+ 浏览器 window.Gomoku.Router。
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -36,6 +37,12 @@
     var timers = [];
     var cleanups = [];
     var started = false;
+    var leaveGuard = null;
+
+    /** 设置当前离开守卫；传 null 清除。守卫返回 false 时取消切换。 */
+    function setLeaveGuard(fn) {
+      leaveGuard = typeof fn === 'function' ? fn : null;
+    }
 
     function clearViewResources() {
       for (var i = 0; i < timers.length; i++) {
@@ -64,6 +71,15 @@
         name = DEFAULT_ROUTE;
       }
       if (!routes[name] || current === name) return;
+
+      if (current && leaveGuard) {
+        var allowed = leaveGuard({ from: current, to: name });
+        if (allowed === false) {
+          // 取消浏览器后退或 hash 切换时恢复地址栏；随后的事件会因 current 相同而忽略。
+          navigate(current);
+          return;
+        }
+      }
 
       if (currentView && typeof currentView.unmount === 'function') {
         try { currentView.unmount(); } catch (e) { /* 卸载异常不阻断 */ }
@@ -115,6 +131,7 @@
       start: start,
       navigate: navigate,
       resolve: resolve,
+      setLeaveGuard: setLeaveGuard,
       currentName: function () { return current; },
     };
   }
