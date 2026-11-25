@@ -50,8 +50,8 @@
 - [x] **T1-5 个人主页视图** ｜ 文件：`client/profile-view.js`、`client/index.html`、`client/style.css` ｜ 依赖：T1-2、T1-3 ｜ 验收：PROF-02/03/12；资料、ID 复制、统计、最近对局、危险区、登录占位 ✅ 2026-11-21 新建 profile-view.js（render/bindEvents/copyToClipboard/handleReset，档案卡+战绩卡+最近对局+危险区+登录占位，昵称textContent防XSS，复制toast，清空二次确认）；index.html加profile-page容器与5个script引用；style.css加个人主页样式（≈270行）
 - [x] **T1-6 编辑资料交互** ｜ 文件：`client/profile-view.js` ｜ 依赖：T1-5 ｜ 验收：PROF-04/05；字数限制、未保存离开提示、保存 toast、头像选中态
 - [x] **T1-7 预设头像资源** ｜ 文件：`client/assets/avatars.js` 或内联 SVG ｜ 依赖：T1-5 ｜ 验收：8 款头像无外链、深浅底都可辨识、40px/96px 两档清晰
-- [ ] **T1-8 自定义头像上传（P1）** ｜ 文件：`client/profile-view.js` ｜ 依赖：T1-7 ｜ 验收：PROF-06；裁剪 128×128、≤32KB、仅本地、失败提示
-- [ ] **T1-9 数据层单元测试** ｜ 文件：`test/*.test.js` ｜ 依赖：T1-1~T1-4 ｜ 验收：mock storage 覆盖正常/配额满/禁用/旧版本/损坏 JSON；NFR-09
+- [x] **T1-8 自定义头像上传（P1）** ｜ 文件：`client/profile-view.js` ｜ 依赖：T1-7 ｜ 验收：PROF-06；裁剪 128×128、≤32KB、仅本地、失败提示
+- [x] **T1-9 数据层单元测试** ｜ 文件：`test/*.test.js` ｜ 依赖：T1-1~T1-4 ｜ 验收：mock storage 覆盖正常/配额满/禁用/旧版本/损坏 JSON；NFR-09 ✅ 2026-11-25 新建 test/storage-resilience.test.js（10用例：正常持久化/配额满降级/禁用SecurityError/无localStorage/损坏JSON回退/旧版本迁移+gomoku.backup.*备份）；补齐 profile-store.js 的 schemaVersion 迁移实现；npm test 80/80 通过
 
 ### M2 页面骨架与导航（2 天）
 

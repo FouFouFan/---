@@ -144,12 +144,38 @@
   // ---------- 核心接口 ----------
 
   /**
+   * 旧版本档案迁移（spec 6.4）：保留合法 playerId / 昵称 / 头像，其余回退默认。
+   * 返回 schemaVersion 为当前版本的新档案。
+   */
+  function migrate(old) {
+    var base = createDefaultProfile();
+    if (typeof old.playerId === 'string' && /^gm_[0-9a-z]{12}$/.test(old.playerId)) {
+      base.playerId = old.playerId;
+      if (typeof old.createdAt === 'number') base.createdAt = old.createdAt;
+    }
+    base.nickname = sanitizeNickname(old.nickname) || defaultNickname(base.playerId);
+    if (AVATAR_IDS.indexOf(old.avatarId) !== -1) base.avatarId = old.avatarId;
+    if (typeof old.avatarDataUrl === 'string' &&
+      old.avatarDataUrl.indexOf('data:image/jpeg;base64,') === 0 &&
+      old.avatarDataUrl.length <= 32768) {
+      base.avatarDataUrl = old.avatarDataUrl;
+    }
+    return base;
+  }
+
+  /**
    * 获取档案；不存在则创建默认档案并落盘（PROF-01）。
+   * schemaVersion 不一致时先备份到 gomoku.backup.* 再迁移。
    */
   function get() {
     var profile = Store.get(PROFILE_KEY, null);
     if (!profile || typeof profile !== 'object') {
       profile = createDefaultProfile();
+      Store.set(PROFILE_KEY, profile);
+      notifySubscribers(profile);
+    } else if (profile.schemaVersion !== SCHEMA_VERSION) {
+      Store.backup(PROFILE_KEY);
+      profile = migrate(profile);
       Store.set(PROFILE_KEY, profile);
       notifySubscribers(profile);
     }
