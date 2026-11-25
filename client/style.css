@@ -454,11 +454,10 @@ body {
   object-fit: cover;
 }
 
-.pf-avatar-ph {
-  color: #fff8e8;
-  font-size: 28px;
-  font-weight: 700;
-  font-family: "Songti SC", serif;
+.pf-avatar > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .pf-info {
@@ -740,15 +739,19 @@ body {
 
 .pf-avatar-option {
   min-height: 52px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 2px solid transparent;
   border-radius: 10px;
-  background: linear-gradient(135deg, #d4a853, #b07a2c);
-  color: #fff8e8;
-  font-size: 20px;
-  font-weight: 700;
-  font-family: "Songti SC", serif;
+  background: rgba(212, 168, 83, 0.1);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pf-avatar-option svg {
+  display: block;
 }
 
 .pf-avatar-option:hover {

@@ -22,12 +22,6 @@
   var RESULT_TEXT = { win: '胜', loss: '负', draw: '和' };
   var MODE_TEXT = { pvp: '双人', ai: '人机' };
   var COLOR_TEXT = { black: '黑', white: '白' };
-  // 8 款预设头像占位字形（T1-7 将替换为内联 SVG 资源）
-  var AVATAR_LABELS = {
-    maple: '枫', bamboo: '竹', plum: '梅', pine: '松',
-    crane: '鹤', moon: '月', mountain: '山', stream: '水',
-  };
-
   // 编辑态状态
   var editing = false;
   var draft = null;       // { nickname, avatarId }
@@ -40,11 +34,6 @@
   function cpTruncate(text, max) {
     var arr = Array.from(text);
     return arr.length > max ? arr.slice(0, max).join('') : text;
-  }
-  /** 预设头像占位字形，缺省回退昵称首字 */
-  function avatarGlyph(profile) {
-    return AVATAR_LABELS[profile.avatarId] ||
-      (profile.nickname ? profile.nickname.charAt(0) : '客');
   }
   /** 计算胜率，games 为 0 时返回 '—' */
   function calcWinRate(wins, games) {
@@ -69,12 +58,12 @@
       '<span class="hist-time">' + formatTime(item.endedAt) + '</span>' +
       '</li>';
   }
-  /** 档案卡头像 HTML */
+  /** 档案卡头像：自定义图优先，否则内联 SVG 预设头像 */
   function buildAvatar(profile) {
     if (profile.avatarDataUrl) {
       return '<img class="pf-avatar-img" src="' + profile.avatarDataUrl + '" alt="头像">';
     }
-    return '<span class="pf-avatar-ph">' + avatarGlyph(profile) + '</span>';
+    return window.Gomoku.Avatars.svg(profile.avatarId, 64);
   }
   /** 展示态档案卡（含「编辑资料」入口） */
   function buildProfileCard(profile) {
@@ -95,11 +84,11 @@
   }
   /** 编辑态档案卡（PROF-04/05） */
   function buildEditCard() {
-    var ids = window.Gomoku.ProfileStore.AVATAR_IDS;
-    var options = ids.map(function (id) {
-      var label = AVATAR_LABELS[id] || id;
+    var Avatars = window.Gomoku.Avatars;
+    var options = Avatars.IDS.map(function (id) {
       return '<button type="button" class="pf-avatar-option" data-avatar="' + id +
-        '" title="' + label + '" aria-pressed="false">' + label + '</button>';
+        '" title="' + Avatars.name(id) + '" aria-label="' + Avatars.name(id) +
+        '" aria-pressed="false">' + Avatars.svg(id, 40) + '</button>';
     }).join('');
 
     return '<div class="pf-card pf-profile pf-editing">' +
