@@ -238,14 +238,7 @@
     render(rootEl, profile, stats);
     showToast('已清空档案，新身份已生成');
   }
-  // 页面互斥：个人主页显示时隐藏联机对战区域，避免主页被推到视口下方
-  function syncExclusiveView(rootEl) {
-    var sels = ['.hero', '#game-info', '#board-area', '.footer-caption'];
-    for (var i = 0; i < sels.length; i++) {
-      var el = document.querySelector(sels[i]);
-      if (el) el.style.display = rootEl.hidden ? '' : 'none';
-    }
-  }
+  // 页面互斥由 Hash 路由统一控制（T2-1/T2-2 的 show()），本模块不再监听 hidden。
   // ---------- 编辑态（PROF-04/05） ----------
   /** 进入编辑态 */
   function enterEdit(rootEl) {
@@ -354,12 +347,6 @@
       var s = window.Gomoku.StatsStore.get();
       render(rootEl, p, s);
     });
-    // 监听 hidden 属性变化，保证个人主页与联机对战互斥显示
-    if (typeof MutationObserver === 'function') {
-      new MutationObserver(function () { syncExclusiveView(rootEl); })
-        .observe(rootEl, { attributes: true, attributeFilter: ['hidden'] });
-    }
-    syncExclusiveView(rootEl);
   }
 
   return {

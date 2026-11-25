@@ -15,6 +15,10 @@
       <span class="brand-mark">枫</span>
       <span class="brand-text">AUTUMN&nbsp;GOMOKU</span>
     </div>
+    <button id="user-chip" class="user-chip" type="button" title="个人主页" aria-label="个人主页">
+      <span id="user-chip-avatar" class="user-chip-avatar" aria-hidden="true"></span>
+      <span id="user-chip-nick" class="user-chip-nick"></span>
+    </button>
     <div id="connection-status" class="status" data-state="connecting">连接中…</div>
   </header>
 
@@ -23,6 +27,23 @@
       <p class="hero-en">Autumn · Five in a Row</p>
       <h1 class="hero-title">枫间五子棋<span class="hero-seal">弈</span></h1>
     </div>
+
+    <section id="home-page" class="home-page">
+      <p class="home-subtitle">落叶之间，手谈一局</p>
+      <div class="mode-cards">
+        <button type="button" class="mode-card" id="mode-ai">
+          <span class="mode-name">人机对决</span>
+          <span class="mode-desc">随时开局，无需联网</span>
+          <span class="mode-meta">三档难度 · 自由执子</span>
+        </button>
+        <button type="button" class="mode-card" id="mode-pvp">
+          <span class="mode-name">双人匹配</span>
+          <span class="mode-desc">局域网 / 同网段实时对战</span>
+          <span class="mode-meta">游客身份 · 无需登录</span>
+        </button>
+      </div>
+      <p class="home-version">枫间五子棋 v2.0</p>
+    </section>
 
     <div id="game-info" class="game-info" data-turn="" hidden>
       <span class="turn-dot" aria-hidden="true"></span>
@@ -66,16 +87,52 @@
   <script src="router.js"></script>
   <script src="app.js"></script>
   <script>
-    // T2-1 Hash 路由接入（NAV-02）：#/home 与 #/profile 互斥切换。
-    // 个人主页的显示/隐藏由其 MutationObserver 联动隐藏对局区域。
-    // #/ai #/match #/game 分别由 T3-5 / T4-7 / T5-1 注册，当前按未知路由回首页。
+    // T2-1 路由 + T2-2 首页模式选择（NAV-01/02/04、PROF-02）
+    // #/ai 由 T3-5 注册，当前点击人机卡片后按未知路由回首页。
     (function () {
       function boot() {
         var router = window.Gomoku.Router.create(window);
+        var homePage = document.getElementById('home-page');
         var profilePage = document.getElementById('profile-page');
-        router.register('home', { mount: function () { profilePage.hidden = true; } });
-        router.register('profile', { mount: function () { profilePage.hidden = false; } });
+        var boardArea = document.getElementById('board-area');
+        var gameInfo = document.getElementById('game-info');
+        var hero = document.querySelector('.hero');
+
+        // 视图互斥：同一时间只显示首页 / 联机对局 / 个人主页
+        function show(view) {
+          homePage.hidden = view !== 'home';
+          profilePage.hidden = view !== 'profile';
+          boardArea.style.display = view === 'match' ? '' : 'none';
+          if (view !== 'match') gameInfo.hidden = true;
+          hero.hidden = view === 'profile';
+        }
+        router.register('home', { mount: function () { show('home'); } });
+        router.register('match', { mount: function () { show('match'); } });
+        router.register('profile', { mount: function () { show('profile'); } });
         window.Gomoku.router = router;
+
+        document.getElementById('mode-ai').addEventListener('click', function () {
+          router.navigate('ai');
+        });
+        document.getElementById('mode-pvp').addEventListener('click', function () {
+          router.navigate('match');
+        });
+        document.getElementById('user-chip').addEventListener('click', function () {
+          router.navigate('profile');
+        });
+
+        // 顶栏用户芯片：头像 + 昵称，跟随档案变更（PROF-02/08）
+        var chipAvatar = document.getElementById('user-chip-avatar');
+        var chipNick = document.getElementById('user-chip-nick');
+        function renderChip(p) {
+          chipAvatar.innerHTML = p.avatarDataUrl
+            ? '<img src="' + p.avatarDataUrl + '" alt="">'
+            : window.Gomoku.Avatars.svg(p.avatarId, 28);
+          chipNick.textContent = p.nickname;
+        }
+        window.Gomoku.ProfileStore.subscribe(renderChip);
+        renderChip(window.Gomoku.ProfileStore.get());
+
         router.start();
       }
       if (document.readyState === 'loading') {

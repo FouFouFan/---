@@ -398,6 +398,153 @@ body {
   }
 }
 
+/* ---------- 顶栏用户芯片（PROF-02） ---------- */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 200px;
+  min-height: 44px;
+  padding: 4px 12px;
+  border: 1px solid rgba(120, 82, 38, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 252, 240, 0.72);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.user-chip:hover {
+  background: rgba(255, 250, 232, 0.95);
+  box-shadow: 0 2px 8px rgba(120, 80, 35, 0.15);
+}
+
+.user-chip-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.user-chip-avatar > svg,
+.user-chip-avatar > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-chip-nick {
+  font-size: 13px;
+  color: #5a3f22;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 首页模式选择（T2-2，NAV-01） ---------- */
+.home-page {
+  padding: 8px 0 20px;
+}
+
+.home-page[hidden] {
+  display: none;
+}
+
+.home-subtitle {
+  text-align: center;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  color: rgba(110, 74, 34, 0.7);
+  margin: 4px 0 24px;
+}
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 150px;
+  padding: 24px 22px;
+  text-align: left;
+  border: 1px solid rgba(140, 98, 48, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(160deg, #fff8e8 0%, #f7e8ce 100%);
+  box-shadow: 0 4px 14px rgba(120, 80, 35, 0.1);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.mode-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(140, 98, 48, 0.4);
+  box-shadow: 0 10px 24px rgba(120, 80, 35, 0.18);
+}
+
+.mode-card:focus-visible,
+.user-chip:focus-visible {
+  outline: 3px solid #b03a2c;
+  outline-offset: 3px;
+}
+
+.mode-name {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: "Songti SC", "SimSun", serif;
+  color: #4a2f14;
+  letter-spacing: 0.06em;
+}
+
+.mode-desc {
+  font-size: 14px;
+  color: rgba(110, 74, 34, 0.85);
+}
+
+.mode-meta {
+  margin-top: auto;
+  font-size: 12px;
+  color: rgba(110, 74, 34, 0.6);
+  letter-spacing: 0.04em;
+}
+
+.home-version {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(110, 74, 34, 0.5);
+}
+
+@media (max-width: 640px) {
+  .mode-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-card {
+    min-height: 120px;
+  }
+
+  .user-chip {
+    max-width: 132px;
+    padding: 4px 8px;
+  }
+
+  .user-chip-nick {
+    font-size: 12px;
+  }
+
+  .topbar {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+}
+
 /* ========== 个人主页 ========== */
 .profile-page {
   width: 100%;
