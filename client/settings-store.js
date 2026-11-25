@@ -23,6 +23,40 @@
   var VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
   var VALID_COLORS = ['auto', 'black', 'white'];
 
+  var listeners = [];
+  var storageBound = false;
+
+  function notify(settings) {
+    listeners.slice().forEach(function (fn) {
+      try {
+        fn(settings);
+      } catch (error) {
+        if (typeof console !== 'undefined') console.error('[settings] listener failed:', error);
+      }
+    });
+  }
+
+  /** 跨标签页同步；只在浏览器环境注册一次 */
+  function bindStorage() {
+    if (storageBound || typeof window === 'undefined' || !window.addEventListener) return;
+    storageBound = true;
+    window.addEventListener('storage', function (event) {
+      if (event.key === SETTINGS_KEY) notify(get());
+    });
+  }
+
+  /** 订阅设置变化，返回取消订阅函数（T2-6：音效开关即时生效） */
+  function subscribe(fn) {
+    if (typeof fn !== 'function') return function () {};
+    listeners.push(fn);
+    bindStorage();
+    return function () {
+      listeners = listeners.filter(function (item) {
+        return item !== fn;
+      });
+    };
+  }
+
   function createDefaultSettings() {
     return {
       schemaVersion: SCHEMA_VERSION,
@@ -110,6 +144,7 @@
     }
 
     Store.set(SETTINGS_KEY, next);
+    notify(next);
     return next;
   }
 
@@ -121,6 +156,7 @@
     VALID_COLORS: VALID_COLORS,
     get: get,
     update: update,
+    subscribe: subscribe,
     _sanitizeField: sanitizeField,
   };
 });

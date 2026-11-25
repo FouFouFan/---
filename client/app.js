@@ -62,6 +62,13 @@ let audioCtx = null; // 落子音效的 AudioContext（首次用户交互时初�
 
 const LEAVE_CONFIRM_TEXT = '离开将结束当前对局，退出将断开连接并判负。确定继续吗？';
 const hoverMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
+const reduceMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
+const soundToggleEl = document.getElementById('sound-toggle');
+const soundStateEl = document.getElementById('sound-toggle-state');
+
+// 音效与动效偏好（SET-01/02）
+let soundEnabled = window.Gomoku.SettingsStore.get().soundEnabled;
+let dropDuration = reduceMotionMedia.matches ? 0 : DROP_DURATION;
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -224,7 +231,7 @@ function easeOutBack(t) {
  * 缩放从 1.2 弹性回落到 1.0，持续约 DROP_DURATION 毫秒。
  */
 function drawAnimatedStone(stone, now) {
-  const t = Math.min(1, (now - stone.startTime) / DROP_DURATION);
+  const t = Math.min(1, (now - stone.startTime) / dropDuration);
   const yOffset = (1 - easeOutQuad(t)) * 80; // 从上方 80px 处落下
   const scale = 1 + 0.2 * (1 - easeOutBack(t)); // 1.2 → 1.0 带回弹
   drawStoneAt(stone.row, stone.col, stone.color, scale, yOffset);
@@ -234,7 +241,7 @@ function drawAnimatedStone(stone, now) {
 function renderTick() {
   animFrameId = null;
   const now = performance.now();
-  animatingStones = animatingStones.filter((s) => now - s.startTime < DROP_DURATION);
+  animatingStones = animatingStones.filter((s) => now - s.startTime < dropDuration);
   renderAll();
   if (animatingStones.length > 0) scheduleRender();
 }
@@ -248,10 +255,15 @@ function scheduleRender() {
 /**
  * 为一枚新落下的棋子启动动画并播放音效。
  * 落子方（本地点击或对手落子）统一调用此函数。
+ * 系统要求减少动态效果时直接绘制终态，不播放下落动画（SET-02）。
  */
 function playStoneAnimation(row, col, color) {
-  animatingStones.push({ row, col, color, startTime: performance.now() });
-  scheduleRender();
+  if (dropDuration > 0) {
+    animatingStones.push({ row, col, color, startTime: performance.now() });
+    scheduleRender();
+  } else {
+    renderAll();
+  }
   playDropSound(color);
 }
 
@@ -273,6 +285,8 @@ function ensureAudioCtx() {
  * 黑子 400Hz、白子 500Hz，正弦波快速衰减约 100ms。
  */
 function playDropSound(color) {
+  if (!soundEnabled) return; // SET-01：关闭后落子无声音
+
   const ctx = ensureAudioCtx();
   if (!ctx) return;
 
@@ -464,6 +478,40 @@ const statusEl = document.getElementById('connection-status');
 function setStatus(text, state) {
   statusEl.textContent = text;
   statusEl.dataset.state = state;
+}
+
+/** 音效开关外观：与 SettingsStore 保持一致（SET-01） */
+function renderSoundToggle() {
+  soundToggleEl.setAttribute('aria-pressed', String(soundEnabled));
+  soundToggleEl.dataset.state = soundEnabled ? 'on' : 'off';
+  soundStateEl.textContent = soundEnabled ? '开' : '关';
+}
+
+function applySettings(settings) {
+  soundEnabled = settings.soundEnabled !== false;
+  renderSoundToggle();
+}
+
+soundToggleEl.addEventListener('click', () => {
+  applySettings(window.Gomoku.SettingsStore.update({ soundEnabled: !soundEnabled }));
+  if (soundEnabled) playDropSound('black'); // 开启时试听一声
+});
+
+// 订阅设置，刷新后恢复；跨标签页修改也即时同步
+window.Gomoku.SettingsStore.subscribe(applySettings);
+applySettings(window.Gomoku.SettingsStore.get());
+
+/** 跟随系统动效偏好；切换为「减少动态效果」时立即结束进行中的下落动画（SET-02） */
+function applyMotionPreference() {
+  dropDuration = reduceMotionMedia.matches ? 0 : DROP_DURATION;
+  if (dropDuration === 0 && animatingStones.length > 0) {
+    animatingStones = [];
+    renderAll();
+  }
+}
+
+if (reduceMotionMedia.addEventListener) {
+  reduceMotionMedia.addEventListener('change', applyMotionPreference);
 }
 
 /** 发送 JSON 消息；未连接时丢弃，序列化/发送异常仅记录错误 */

@@ -62,7 +62,7 @@
 - [x] **T2-3 对局离开守卫** ｜ 文件：`client/router.js`、`client/app.js` ｜ 依赖：T2-1 ｜ 验收：NAV-03；`beforeunload`、路由确认、确认后按 5.6 退出语义处理 ✅ 2026-11-25 router.js 新增 setLeaveGuard（取消恢复 hash 且不卸载，确认后清理）+2用例；app.js 对局开始/终局同步守卫，确认后关闭 WS 按 disconnect 判负，beforeunload 覆盖刷新/关页；品牌改为 #/home 原生链接；npm test 93/93 通过（D-5/D-6 浏览器交互待人工验收）
 - [x] **T2-4 响应式与触屏** ｜ 文件：`client/style.css` ｜ 依赖：T2-2 ｜ 验收：NAV-05；360/768/1280 三档、棋盘不溢出、触屏无悬停预览 ✅ 2026-11-25 style.css 新增响应式段：首页限宽、顶栏防溢出、≤480px 紧凑布局、棋盘/浮层同步缩放、个人主页与历史记录换行、coarse 指针按钮 ≥44px；app.js 改用 pointermove/pointerleave，仅支持悬停的鼠标指针显示预览；node --check 与 npm test 93/93 通过（D-7/I-6 浏览器三档与触屏待人工验收）
 - [x] **T2-5 连接策略** ｜ 文件：`client/app.js` ｜ 依赖：T2-2 ｜ 验收：NAV-07；启动静默连接、失败降级 AI、手动重试、不重复弹窗 ✅ 2026-11-25 启动连接仅更新顶栏状态不弹窗；离线时匹配页显示可点击「重试连接」，人机入口不依赖 WS（AI 本体待 T3-5）；连接中点击不重复建连，open 后自动补发 match_request；忽略旧 socket 事件并捕获发送异常；npm test 93/93 通过（D-9 停启服务端浏览器场景待人工验收）
-- [ ] **T2-6 音效与动效偏好** ｜ 文件：`client/settings-store.js`、`client/style.css` ｜ 依赖：T1-4 ｜ 验收：SET-01/02；关闭音效立即生效、reduced-motion 关闭下落动画
+- [x] **T2-6 音效与动效偏好** ｜ 文件：`client/settings-store.js`、`client/style.css` ｜ 依赖：T1-4 ｜ 验收：SET-01/02；关闭音效立即生效、reduced-motion 关闭下落动画 ✅ 2026-11-25 settings-store.js 新增 subscribe（含跨标签 storage 同步，异常隔离）+2用例；index.html 首页新增音效开关（aria-pressed）；app.js 落子音效受开关控制、开启时试听、刷新恢复；reduced-motion 时 dropDuration=0 直接绘终态并清空进行中动画，style.css 补开关样式与全局缩短过渡；npm test 95/95 通过（D-8 键盘/I-5 动效待人工验收）
 - [ ] **T2-7 棋盘视图拆分** ｜ 文件：`client/board-view.js`（从 `client/app.js` 拆出）｜ 依赖：T2-1 ｜ 验收：NFR-08；暴露 reset/render/setInteractive/onMove；视觉与交互与 v1 一致；单文件 ≤400 行
 
 ### M3 人机对决（2.5 天）

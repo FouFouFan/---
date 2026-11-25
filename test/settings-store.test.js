@@ -135,3 +135,31 @@ test('update 非对象返回当前设置', () => {
   const s = SettingsStore.update(null);
   assert.equal(s.aiDifficulty, 'medium');
 });
+
+// ---------- 订阅（T2-6） ----------
+
+test('update 后订阅者收到最新设置', () => {
+  const { SettingsStore } = reloadModules();
+  const seen = [];
+  SettingsStore.subscribe((s) => seen.push(s.soundEnabled));
+
+  SettingsStore.update({ soundEnabled: false });
+  SettingsStore.update({ soundEnabled: true });
+
+  assert.deepEqual(seen, [false, true]);
+});
+
+test('取消订阅后不再收到通知，且单个订阅者异常不影响其他订阅者', () => {
+  const { SettingsStore } = reloadModules();
+  const seen = [];
+  const unsubscribe = SettingsStore.subscribe(() => {
+    throw new Error('boom');
+  });
+  SettingsStore.subscribe((s) => seen.push(s.aiDifficulty));
+
+  assert.doesNotThrow(() => SettingsStore.update({ aiDifficulty: 'hard' }));
+  unsubscribe();
+  SettingsStore.update({ aiDifficulty: 'easy' });
+
+  assert.deepEqual(seen, ['hard', 'easy']);
+});

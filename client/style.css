@@ -491,7 +491,8 @@ body {
 
 .mode-card:focus-visible,
 .user-chip:focus-visible,
-.brand:focus-visible {
+.brand:focus-visible,
+.sound-toggle:focus-visible {
   outline: 3px solid #b03a2c;
   outline-offset: 3px;
 }
@@ -514,6 +515,48 @@ body {
   font-size: 12px;
   color: rgba(110, 74, 34, 0.6);
   letter-spacing: 0.04em;
+}
+
+.home-settings {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(122, 82, 40, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 250, 238, 0.72);
+  color: #6e4a22;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.sound-toggle:hover {
+  background: rgba(255, 250, 238, 0.95);
+  border-color: rgba(122, 82, 40, 0.45);
+}
+
+.sound-toggle[data-state='off'] {
+  color: rgba(110, 74, 34, 0.55);
+  border-color: rgba(122, 82, 40, 0.18);
+}
+
+.sound-toggle-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.sound-toggle-state {
+  min-width: 1em;
+  font-weight: 600;
 }
 
 .home-version {
@@ -1135,6 +1178,24 @@ body {
 @media (hover: none) {
   .match-button:hover:not(:disabled),
   .mode-card:hover,
+  .pf-avatar-option:hover {
+    transform: none;
+  }
+}
+
+/* 系统开启「减少动态效果」时缩短过渡（SET-02；棋盘下落动画由 app.js 关闭） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .mode-card:hover,
+  .match-button:hover:not(:disabled),
   .pf-avatar-option:hover {
     transform: none;
   }
