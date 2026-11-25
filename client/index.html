@@ -63,6 +63,27 @@
   <script src="stats-store.js"></script>
   <script src="settings-store.js"></script>
   <script src="profile-view.js"></script>
+  <script src="router.js"></script>
   <script src="app.js"></script>
+  <script>
+    // T2-1 Hash 路由接入（NAV-02）：#/home 与 #/profile 互斥切换。
+    // 个人主页的显示/隐藏由其 MutationObserver 联动隐藏对局区域。
+    // #/ai #/match #/game 分别由 T3-5 / T4-7 / T5-1 注册，当前按未知路由回首页。
+    (function () {
+      function boot() {
+        var router = window.Gomoku.Router.create(window);
+        var profilePage = document.getElementById('profile-page');
+        router.register('home', { mount: function () { profilePage.hidden = true; } });
+        router.register('profile', { mount: function () { profilePage.hidden = false; } });
+        window.Gomoku.router = router;
+        router.start();
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+      } else {
+        boot();
+      }
+    })();
+  </script>
 </body>
 </html>
