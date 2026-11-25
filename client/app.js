@@ -61,6 +61,7 @@ let animFrameId = null; // 落子动画的 rAF id
 let audioCtx = null; // 落子音效的 AudioContext（首次用户交互时初始化）
 
 const LEAVE_CONFIRM_TEXT = '离开将结束当前对局，退出将断开连接并判负。确定继续吗？';
+const hoverMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
 
 /** 按设备像素比初始化画布，保证高分屏下网格清晰 */
 function setupCanvas() {
@@ -315,6 +316,7 @@ function renderAll() {
   }
   // 仅在自己回合、悬停于空位时显示半透明预览棋
   if (
+    hoverMedia.matches &&
     hoverCell &&
     inGame &&
     !gameFinished &&
@@ -391,8 +393,8 @@ canvas.addEventListener('click', handleCanvasClick);
 
 /** 根据鼠标位置更新悬停预览，并按需重绘 */
 function updateHover(event) {
-  // 不在自己回合、对局未进行时不显示预览
-  if (!inGame || gameFinished || currentTurn !== myColor) {
+  // 触屏/无悬停能力设备、非己方回合或对局未进行时不显示预览
+  if (!hoverMedia.matches || !inGame || gameFinished || currentTurn !== myColor) {
     if (hoverCell) {
       hoverCell = null;
       renderAll();
@@ -417,8 +419,17 @@ function updateHover(event) {
   }
 }
 
-/** mousemove 处理：用 requestAnimationFrame 节流，避免高频重绘卡顿 */
-function handleCanvasMouseMove(event) {
+/** pointermove 处理：仅鼠标可预览，并用 requestAnimationFrame 节流 */
+function handleCanvasPointerMove(event) {
+  if (event.pointerType !== 'mouse' || !hoverMedia.matches) {
+    pendingHoverEvent = null;
+    if (hoverCell) {
+      hoverCell = null;
+      renderAll();
+    }
+    return;
+  }
+
   pendingHoverEvent = event;
   if (hoverScheduled) return;
   hoverScheduled = true;
@@ -431,8 +442,8 @@ function handleCanvasMouseMove(event) {
   });
 }
 
-canvas.addEventListener('mousemove', handleCanvasMouseMove);
-canvas.addEventListener('mouseleave', () => {
+canvas.addEventListener('pointermove', handleCanvasPointerMove);
+canvas.addEventListener('pointerleave', () => {
   if (hoverCell) {
     hoverCell = null;
     renderAll();

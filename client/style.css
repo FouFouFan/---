@@ -1015,3 +1015,127 @@ body {
     padding: 16px 18px;
   }
 }
+
+/* ========== 响应式与触屏（T2-4，NAV-05） ========== */
+.topbar {
+  gap: 12px;
+}
+
+.brand,
+.status {
+  flex-shrink: 0;
+}
+
+.status {
+  white-space: nowrap;
+}
+
+.user-chip {
+  min-width: 0;
+}
+
+.home-page {
+  width: 100%;
+  max-width: 760px;
+}
+
+#board-canvas {
+  touch-action: manipulation;
+}
+
+.footer-caption {
+  max-width: 100%;
+  line-height: 1.8;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .match-panel,
+  .result-panel {
+    max-width: 100%;
+    padding: 24px 20px;
+  }
+
+  .pf-profile:not(.pf-editing) {
+    flex-wrap: wrap;
+  }
+
+  .pf-profile:not(.pf-editing) .pf-edit-btn {
+    width: 100%;
+  }
+
+  .pf-id-row,
+  .hist-item {
+    flex-wrap: wrap;
+  }
+
+  .hist-item {
+    gap: 6px 10px;
+  }
+
+  .hist-time {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .brand-text {
+    display: none;
+  }
+
+  .user-chip {
+    max-width: 110px;
+  }
+
+  .status {
+    padding: 4px 8px;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+
+  .layout {
+    padding: 2px 12px 22px;
+    gap: 14px;
+  }
+
+  .board-area {
+    padding: 10px;
+  }
+
+  .board-area::after,
+  .match-overlay,
+  .result-overlay {
+    inset: 10px;
+  }
+
+  .game-info {
+    max-width: 100%;
+    padding: 8px 12px;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .footer-caption {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+  }
+}
+
+@media (pointer: coarse) {
+  button {
+    min-height: 44px;
+  }
+}
+
+@media (hover: none) {
+  .match-button:hover:not(:disabled),
+  .mode-card:hover,
+  .pf-avatar-option:hover {
+    transform: none;
+  }
+}
