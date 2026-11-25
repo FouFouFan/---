@@ -466,13 +466,17 @@ function setStatus(text, state) {
   statusEl.dataset.state = state;
 }
 
-/** 发送 JSON 消息；未连接时丢弃 */
+/** 发送 JSON 消息；未连接时丢弃，序列化/发送异常仅记录错误 */
 function sendMessage(message) {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     console.warn('[ws] not connected, message dropped:', message);
     return;
   }
-  socket.send(JSON.stringify(message));
+  try {
+    socket.send(JSON.stringify(message));
+  } catch (error) {
+    console.error('[ws] send failed:', error, message);
+  }
 }
 
 /** 把剩余毫秒格式化为 m:ss */
@@ -714,7 +718,10 @@ resultButtonEl.addEventListener('click', () => {
 matchButtonEl.addEventListener('click', () => {
   ensureAudioCtx(); // 首次用户交互时解锁音频上下文
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    showMatchPanel('尚未连接服务器，请稍后重试', '开始匹配', true);
+    // 手动重试连接；若启动连接仍在进行，connect() 会防止重复创建。
+    searching = true;
+    showMatchPanel('正在连接服务器…', '连接中…', true);
+    connect();
     return;
   }
 
@@ -724,35 +731,46 @@ matchButtonEl.addEventListener('click', () => {
 });
 
 function connect() {
+  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+
+  // 启动及重试均只更新状态，不弹 alert，也不自动循环重连（自动恢复由 T5-5 交付）。
   setStatus('连接中…', 'connecting');
+  const ws = new WebSocket(WS_URL);
+  socket = ws;
 
-  socket = new WebSocket(WS_URL);
-
-  socket.addEventListener('open', () => {
+  ws.addEventListener('open', () => {
+    if (socket !== ws) return;
     console.log('[ws] connected:', WS_URL);
     setStatus('已连接', 'online');
     if (searching) {
       showMatchPanel('正在匹配，等待对手加入…', '匹配中…', true);
+      sendMessage({ type: 'match_request' });
     } else if (!inGame) {
       showMatchPanel('点击下方按钮开始匹配对手', '开始匹配', false);
     }
   });
 
-  socket.addEventListener('close', () => {
+  ws.addEventListener('close', () => {
+    if (socket !== ws) return;
     console.log('[ws] disconnected');
+    socket = null;
     setStatus('已断开', 'offline');
-    if (searching) {
-      searching = false;
-      showMatchPanel('连接已断开，请刷新页面重试', '开始匹配', true);
+    searching = false;
+    if (!inGame) {
+      showMatchPanel('服务器暂不可用，可重试连接；人机模式不受影响', '重试连接', false);
     }
   });
 
-  socket.addEventListener('error', () => {
+  ws.addEventListener('error', () => {
+    if (socket !== ws) return;
     console.error('[ws] connection error:', WS_URL);
     setStatus('连接失败', 'offline');
   });
 
-  socket.addEventListener('message', (event) => {
+  ws.addEventListener('message', (event) => {
+    if (socket !== ws) return;
     let message;
     try {
       message = JSON.parse(event.data);
