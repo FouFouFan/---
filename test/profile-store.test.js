@@ -141,6 +141,43 @@ test('update 合法 avatarId 生效', () => {
   assert.equal(updated.avatarId, 'crane');
 });
 
+// ---------- PROF-06 自定义头像 ----------
+
+test('avatarDataUrl 合法 JPEG dataURL 可保存', () => {
+  const { ProfileStore } = reloadModules();
+  ProfileStore.get();
+  const url = 'data:image/jpeg;base64,' + 'a'.repeat(100);
+  const updated = ProfileStore.update({ avatarDataUrl: url });
+  assert.equal(updated.avatarDataUrl, url);
+});
+
+test('avatarDataUrl 非 JPEG 前缀被拒绝，保持原值', () => {
+  const { ProfileStore } = reloadModules();
+  ProfileStore.get();
+  const url = 'data:image/jpeg;base64,' + 'a'.repeat(100);
+  ProfileStore.update({ avatarDataUrl: url });
+  const updated = ProfileStore.update({ avatarDataUrl: 'data:image/png;base64,xxxx' });
+  assert.equal(updated.avatarDataUrl, url);
+  const updated2 = ProfileStore.update({ avatarDataUrl: 'https://evil.com/x.png' });
+  assert.equal(updated2.avatarDataUrl, url);
+});
+
+test('avatarDataUrl 超过 32KB 被拒绝', () => {
+  const { ProfileStore } = reloadModules();
+  ProfileStore.get();
+  const huge = 'data:image/jpeg;base64,' + 'a'.repeat(32768);
+  const updated = ProfileStore.update({ avatarDataUrl: huge });
+  assert.equal(updated.avatarDataUrl, null);
+});
+
+test('avatarDataUrl 传 null 可清除自定义头像', () => {
+  const { ProfileStore } = reloadModules();
+  ProfileStore.get();
+  ProfileStore.update({ avatarDataUrl: 'data:image/jpeg;base64,abc' });
+  const updated = ProfileStore.update({ avatarDataUrl: null });
+  assert.equal(updated.avatarDataUrl, null);
+});
+
 // ---------- PROF-08 订阅 ----------
 
 test('subscribe 在 update 时收到通知', () => {

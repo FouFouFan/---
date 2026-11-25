@@ -82,15 +82,8 @@
       '<button type="button" class="pf-edit-btn" id="pf-edit-btn">编辑资料</button>' +
     '</div>';
   }
-  /** 编辑态档案卡（PROF-04/05） */
+  /** 编辑态档案卡（PROF-04/05/06） */
   function buildEditCard() {
-    var Avatars = window.Gomoku.Avatars;
-    var options = Avatars.IDS.map(function (id) {
-      return '<button type="button" class="pf-avatar-option" data-avatar="' + id +
-        '" title="' + Avatars.name(id) + '" aria-label="' + Avatars.name(id) +
-        '" aria-pressed="false">' + Avatars.svg(id, 40) + '</button>';
-    }).join('');
-
     return '<div class="pf-card pf-profile pf-editing">' +
       '<h3 class="pf-card-title">编辑资料</h3>' +
       '<label class="pf-edit-label" for="pf-nick-input">昵称</label>' +
@@ -100,7 +93,7 @@
         '<span class="pf-nick-counter" id="pf-nick-counter">0/12</span>' +
       '</div>' +
       '<p class="pf-edit-label">头像</p>' +
-      '<div class="pf-avatar-grid" id="pf-avatar-grid">' + options + '</div>' +
+      window.Gomoku.AvatarPicker.html() +
       '<div class="pf-edit-actions">' +
         '<button type="button" class="pf-save-btn" id="pf-save-btn" disabled>保存</button>' +
         '<button type="button" class="pf-cancel-btn" id="pf-cancel-btn">取消</button>' +
@@ -258,7 +251,11 @@
   function enterEdit(rootEl) {
     var profile = window.Gomoku.ProfileStore.get();
     editing = true;
-    draft = { nickname: profile.nickname, avatarId: profile.avatarId };
+    draft = {
+      nickname: profile.nickname,
+      avatarId: profile.avatarId,
+      avatarDataUrl: profile.avatarDataUrl || null,
+    };
     render(rootEl, profile, window.Gomoku.StatsStore.get());
     var input = rootEl.querySelector('#pf-nick-input');
     if (input) {
@@ -296,13 +293,14 @@
     var counter = rootEl.querySelector('#pf-nick-counter');
     var saveBtn = rootEl.querySelector('#pf-save-btn');
     var cancelBtn = rootEl.querySelector('#pf-cancel-btn');
-    var grid = rootEl.querySelector('#pf-avatar-grid');
-    if (!input || !counter || !saveBtn || !cancelBtn || !grid || !draft) return;
+    if (!input || !counter || !saveBtn || !cancelBtn || !draft) return;
 
     input.value = draft.nickname;
 
     function isDirty() {
-      return input.value.trim() !== profile.nickname || draft.avatarId !== profile.avatarId;
+      return input.value.trim() !== profile.nickname ||
+        draft.avatarId !== profile.avatarId ||
+        (draft.avatarDataUrl || null) !== (profile.avatarDataUrl || null);
     }
 
     function sync() {
@@ -312,15 +310,6 @@
       saveBtn.disabled = !isDirty();
     }
 
-    function markSelected() {
-      var opts = grid.querySelectorAll('.pf-avatar-option');
-      for (var i = 0; i < opts.length; i++) {
-        var on = opts[i].getAttribute('data-avatar') === draft.avatarId;
-        opts[i].classList.toggle('is-selected', on);
-        opts[i].setAttribute('aria-pressed', on ? 'true' : 'false');
-      }
-    }
-
     input.addEventListener('input', function () {
       var limited = cpTruncate(input.value, 12);
       if (limited !== input.value) input.value = limited;
@@ -328,16 +317,12 @@
       sync();
     });
 
-    grid.addEventListener('click', function (e) {
-      var btn = e.target.closest ? e.target.closest('.pf-avatar-option') : null;
-      if (!btn) return;
-      draft.avatarId = btn.getAttribute('data-avatar');
-      markSelected();
-      sync();
-    });
-
     saveBtn.addEventListener('click', function () {
-      var patch = { nickname: draft.nickname, avatarId: draft.avatarId };
+      var patch = {
+        nickname: draft.nickname,
+        avatarId: draft.avatarId,
+        avatarDataUrl: draft.avatarDataUrl || null,
+      };
       editing = false;
       draft = null;
       removeDirtyGuard();
@@ -351,7 +336,7 @@
       exitEdit(rootEl);
     });
 
-    markSelected();
+    window.Gomoku.AvatarPicker.bind(rootEl, draft, sync);
     sync();
     addDirtyGuard(isDirty);
   }

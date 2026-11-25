@@ -193,6 +193,19 @@
         : current.avatarId;
     }
 
+    // 自定义头像（PROF-06）：仅接受 data:image/jpeg;base64, 前缀且 ≤32KB；null 表示清除
+    if (Object.prototype.hasOwnProperty.call(patch, 'avatarDataUrl')) {
+      var url = patch.avatarDataUrl;
+      if (url === null) {
+        next.avatarDataUrl = null;
+      } else if (typeof url === 'string' &&
+        url.indexOf('data:image/jpeg;base64,') === 0 && url.length <= 32768) {
+        next.avatarDataUrl = url;
+      } else {
+        next.avatarDataUrl = current.avatarDataUrl;
+      }
+    }
+
     Store.set(PROFILE_KEY, next);
     notifySubscribers(next);
     return next;
