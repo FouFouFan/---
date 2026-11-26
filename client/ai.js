@@ -221,10 +221,162 @@
     return candidates.slice(0, limit);
   }
 
+  // ---------- 搜索与难度（T3-2） ----------
+
+  var DEFAULT_TIME_LIMIT = 800; // 困难档单步上限（毫秒）
+  var WIN_SCORE = 10000000;
+  var TIMEOUT = { timeout: true };
+  /** mulberry32：轻量可复现随机数，同一种子得到同一序列（AI-11） */
+  function createRng(seed) {
+    var state = (Number(seed) >>> 0) || 0x9e3779b9;
+    return function () {
+      state += 0x6d2b79f5;
+      var t = Math.imul(state ^ (state >>> 15), 1 | state);
+      t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /** 找一步成五的落点；无则返回 null（AI-04） */
+  function findWinningMove(board, color) {
+    var moves = generateCandidates(board, color, { limit: MAX_CANDIDATES });
+    for (var i = 0; i < moves.length; i++) {
+      var move = moves[i];
+      board[move.row][move.col] = color;
+      var win = hasFive(board, move.row, move.col, color);
+      board[move.row][move.col] = null;
+      if (win) return { row: move.row, col: move.col };
+    }
+    return null;
+  }
+  /** 按剩余层数限制分支，控制 4 层搜索规模 */
+  function candidateLimit(depth) {
+    return depth >= 4 ? 12 : depth === 3 ? 8 : depth === 2 ? 5 : 4;
+  }
+
+  /** 叶子评估：己方最佳威胁减去对手最佳威胁（略偏防守） */
+  function evaluateBoard(board, color) {
+    var mine = generateCandidates(board, color, { limit: 6 })[0];
+    var foe = generateCandidates(board, opposite(color), { limit: 6 })[0];
+    return (mine ? mine.score : 0) - (foe ? foe.score : 0) * 1.1;
+  }
+  /** 负极大值 + α-β 剪枝；超出时限抛出 TIMEOUT 由根节点回退 */
+  function negamax(board, color, depth, alpha, beta, aiColor, deadline) {
+    if (Date.now() > deadline) throw TIMEOUT;
+    if (depth === 0) return evaluateBoard(board, aiColor);
+
+    var moves = generateCandidates(board, color, { limit: candidateLimit(depth) });
+    if (!moves.length) return 0;
+    var best = -Infinity;
+    for (var i = 0; i < moves.length; i++) {
+      var move = moves[i];
+      var score;
+      board[move.row][move.col] = color;
+      try {
+        if (hasFive(board, move.row, move.col, color)) {
+          score = color === aiColor ? WIN_SCORE - (10 - depth) : -(WIN_SCORE - (10 - depth));
+        } else {
+          score = -negamax(board, opposite(color), depth - 1, -beta, -alpha, aiColor, deadline);
+        }
+      } finally {
+        board[move.row][move.col] = null; // 超时抛出时也要撤销，保证棋盘不被污染
+      }
+      if (score > best) best = score;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+
+  /** 根节点搜索；超时或被中断时返回 null，由调用方回退到上一层结果 */
+  function searchRoot(board, color, depth, deadline) {
+    var moves = generateCandidates(board, color, { limit: candidateLimit(depth) });
+    if (!moves.length) return null;
+    var bestMove = null, bestScore = -Infinity, alpha = -Infinity;
+    try {
+      for (var i = 0; i < moves.length; i++) {
+        if (Date.now() > deadline) throw TIMEOUT;
+        var move = moves[i];
+        var score;
+        board[move.row][move.col] = color;
+        try {
+          if (hasFive(board, move.row, move.col, color)) {
+            score = WIN_SCORE;
+          } else {
+            score = -negamax(board, opposite(color), depth - 1, -Infinity, -alpha, color, deadline);
+          }
+        } finally {
+          board[move.row][move.col] = null;
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = move;
+        }
+        if (score > alpha) alpha = score;
+      }
+    } catch (error) {
+      if (error === TIMEOUT) return null;
+      throw error;
+    }
+    return bestMove ? { move: { row: bestMove.row, col: bestMove.col }, score: bestScore, depth: depth } : null;
+  }
+
+  /** 简单档：Top3 中 30% 概率随机挑一个次优（新手可胜，会漏防活三） */
+  function easyMove(candidates, rng) {
+    var top = candidates.slice(0, 3);
+    var index = top.length > 1 && rng() < 0.3 ? 1 + Math.floor(rng() * (top.length - 1)) : 0;
+    return { row: top[index].row, col: top[index].col };
+  }
+  /** 困难档：迭代加深 2→4 层，超时保留已完成层的最佳落子 */
+  function hardMove(board, color, candidates, opts) {
+    var limit = typeof opts.timeLimit === 'number' ? opts.timeLimit : DEFAULT_TIME_LIMIT;
+    var deadline = Date.now() + limit;
+    var best = null;
+    for (var depth = 2; depth <= 4; depth += 2) {
+      var result = searchRoot(board, color, depth, deadline);
+      if (!result) break;
+      best = result.move;
+    }
+    return best || { row: candidates[0].row, col: candidates[0].col };
+  }
+
+  /** 选择落子：[options] color/difficulty/seed/timeLimit；满盘返回 null */
+  function chooseMove(board, options) {
+    var opts = options || {};
+    var color = opts.color === 'white' ? 'white' : 'black';
+    var difficulty = opts.difficulty || 'normal';
+    var rng = createRng(opts.seed === undefined ? Date.now() : opts.seed);
+    var candidates = generateCandidates(board, color);
+    if (!candidates.length) return null;
+
+    // AI-04：己方一步成五必下；其次对手一步成五必堵
+    var winning = findWinningMove(board, color);
+    if (winning) return winning;
+    var blocking = findWinningMove(board, opposite(color));
+    if (blocking) return blocking;
+
+    var move;
+    if (difficulty === 'easy') {
+      move = easyMove(candidates, rng);
+    } else if (difficulty === 'hard') {
+      move = hardMove(board, color, candidates, opts);
+    } else {
+      var result = searchRoot(board, color, 2, Infinity);
+      move = result ? result.move : candidates[0];
+    }
+
+    // 硬约束：返回前再次校验坐标与空位（AI-03）
+    if (!move || !isLegalMove(board, move.row, move.col)) {
+      move = { row: candidates[0].row, col: candidates[0].col };
+    }
+    return move;
+  }
+
   return {
     SIZE: SIZE,
     MAX_CANDIDATES: MAX_CANDIDATES,
     NEIGHBOR_RADIUS: NEIGHBOR_RADIUS,
+    DEFAULT_TIME_LIMIT: DEFAULT_TIME_LIMIT,
     SCORES: SCORES,
     DIRECTIONS: DIRECTIONS,
     createBoard: createBoard,
@@ -240,5 +392,9 @@
     scoreLine: scoreLine,
     evaluatePoint: evaluatePoint,
     generateCandidates: generateCandidates,
+    createRng: createRng,
+    findWinningMove: findWinningMove,
+    evaluateBoard: evaluateBoard,
+    chooseMove: chooseMove,
   };
 });

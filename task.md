@@ -70,7 +70,7 @@
 目标：三档 AI 可玩、合法、不卡顿。退出条件：困难档 100 局无非法落子，P95 ≤800ms。
 
 - [x] **T3-1 AI 棋盘与评估** ｜ 文件：`client/ai.js`、`test/ai.test.js` ｜ 依赖：T0-4 ｜ 验收：AI-02/03；纯函数、候选生成、四方向模式评分 ✅ 2026-11-26 新建 ai.js（244 行，UMD 双环境，无 DOM/网络）：createBoard/cloneBoard/inBounds/isLegalMove/getLegalMoves/boardIsFull/countLine/hasFive/lineString/scoreLine/evaluatePoint/generateCandidates；候选=距棋子切比雪夫≤2 的空位、空盘天元、上限 60、按进攻+0.9×防守降序；四方向 9 格线型匹配五连/活四/冲四/活三/眠三/活二/眠二；14 个纯函数用例；npm test 109/109 通过
-- [ ] **T3-2 AI 搜索与难度** ｜ 文件：`client/ai.js` ｜ 依赖：T3-1 ｜ 验收：AI-04/05/11；1/2/4 层、α-β、排序、迭代加深、时限、可复现种子
+- [x] **T3-2 AI 搜索与难度** ｜ 文件：`client/ai.js` ｜ 依赖：T3-1 ｜ 验收：AI-04/05/11；1/2/4 层、α-β、排序、迭代加深、时限、可复现种子 ✅ 2026-11-26 ai.js 增加 chooseMove/findWinningMove/negamax/searchRoot/hardMove/easyMove/createRng（仍为 400 行）：先判己方一步成五、再堵对手成五；简单=Top3 中 30% 随机（mulberry32 种子可复现），普通=2 层 α-β，困难=迭代加深 2→4 层、候选按启发式排序、默认 800ms 上限且超时回退已完成层；超时用 finally 撤销临时棋子，棋盘不被污染；返回前复核坐标与空位；新增 6 个用例（必胜/必防/复现/时限/满盘/简单档），npm test 115/115 通过
 - [ ] **T3-3 兜底与异常** ｜ 文件：`client/ai.js` ｜ 依赖：T3-2 ｜ 验收：AI-03；超时/异常回退合法落子；不抛错、不返回占用点
 - [ ] **T3-4 AI 测试夹具** ｜ 文件：`test/ai.test.js` ｜ 依赖：T3-3 ｜ 验收：必胜/必防/活三防守/空盘天元/满盘和棋/100 局合法性
 - [ ] **T3-5 人机设置页** ｜ 文件：`client/ai-view.js`、`client/index.html` ｜ 依赖：T2-2、T1-4 ｜ 验收：AI-01；难度分段、执子选择、记忆偏好、规则说明

@@ -161,3 +161,66 @@ test('不依赖浏览器环境即可运行（纯本地，无网络）', () => {
   assert.equal(typeof window, 'undefined');
   assert.equal(typeof AI.generateCandidates(board, 'white')[0].row, 'number');
 });
+
+// ---------- 搜索与难度（T3-2） ----------
+
+test('己方一步成五必下，三档难度一致（AI-04）', () => {
+  const board = boardWith([[7, 3], [7, 4], [7, 5], [7, 6]]);
+  for (const difficulty of ['easy', 'normal', 'hard']) {
+    const move = AI.chooseMove(board, { color: 'black', difficulty, seed: 1, timeLimit: 200 });
+    assert.equal(move.row, 7);
+    assert.ok([2, 7].includes(move.col), difficulty + ' 应下在两端成五点');
+  }
+});
+
+test('对手一步成五必须封堵（AI-04）', () => {
+  const board = boardWith([[3, 5], [4, 5], [5, 5], [6, 5]], 'white');
+  for (const difficulty of ['normal', 'hard']) {
+    const move = AI.chooseMove(board, { color: 'black', difficulty, seed: 2, timeLimit: 200 });
+    assert.equal(move.col, 5);
+    assert.ok([2, 7].includes(move.row), difficulty + ' 应封堵竖线');
+  }
+});
+
+test('相同棋盘 + 难度 + 种子得到相同落子（AI-11）', () => {
+  const board = boardWith([[7, 7], [8, 8], [7, 8]], 'black');
+  for (const difficulty of ['easy', 'normal', 'hard']) {
+    const a = AI.chooseMove(board, { color: 'white', difficulty, seed: 20261126, timeLimit: 200 });
+    const b = AI.chooseMove(board, { color: 'white', difficulty, seed: 20261126, timeLimit: 200 });
+    assert.deepEqual(a, b, difficulty + ' 应可复现');
+  }
+});
+
+test('困难档在时限内返回合法落子，且不修改输入棋盘（AI-03）', () => {
+  const board = boardWith([[7, 7], [7, 8], [8, 7], [6, 6], [8, 8]], 'white');
+  const before = snapshot(board);
+
+  const started = Date.now();
+  const move = AI.chooseMove(board, { color: 'black', difficulty: 'hard', seed: 3, timeLimit: 100 });
+  const elapsed = Date.now() - started;
+
+  assert.ok(elapsed < 1500, '耗时 ' + elapsed + 'ms 超出兜底预期');
+  assert.ok(AI.isLegalMove(board, move.row, move.col));
+  assert.equal(snapshot(board), before);
+});
+
+test('满盘时无落子可返回 null，合法落子不重复占用', () => {
+  const full = AI.createBoard();
+  for (const row of full) row.fill('black');
+  assert.equal(AI.chooseMove(full, { color: 'white' }), null);
+
+  const board = boardWith([[7, 7], [8, 8]], 'black');
+  const move = AI.chooseMove(board, { color: 'black', difficulty: 'normal' });
+  assert.equal(board[move.row][move.col], null);
+});
+
+test('简单档 Top3 随机仍可复现，空盘首手为天元', () => {
+  const center = AI.chooseMove(AI.createBoard(), { color: 'black', difficulty: 'easy', seed: 9 });
+  assert.deepEqual(center, { row: 7, col: 7 });
+
+  const board = boardWith([[7, 5], [7, 6], [7, 7]]);
+  const a = AI.chooseMove(board, { color: 'black', difficulty: 'easy', seed: 9 });
+  const b = AI.chooseMove(board, { color: 'black', difficulty: 'easy', seed: 9 });
+  assert.deepEqual(a, b);
+  assert.ok(AI.isLegalMove(board, a.row, a.col));
+});
