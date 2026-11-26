@@ -79,6 +79,8 @@
       </div>
     </section>
 
+    <section id="ai-page" class="ai-page" hidden></section>
+
     <section id="profile-page" class="profile-page" hidden></section>
 
     <p class="footer-caption">Five in a Row · Gomoku · Autumn Edition</p>
@@ -93,23 +95,26 @@
   <script src="profile-view.js"></script>
   <script src="router.js"></script>
   <script src="board-view.js"></script>
+  <script src="ai-view.js"></script>
   <script src="app.js"></script>
   <script>
     // T2-1 路由 + T2-2 首页模式选择（NAV-01/02/04、PROF-02）
-    // #/ai 由 T3-5 注册，当前点击人机卡片后按未知路由回首页。
+    // #/ai 由 T3-5 注册（AI-01）；#/game 由 T3-6 注册。
     (function () {
       function boot() {
         var router = window.Gomoku.Router.create(window);
         var homePage = document.getElementById('home-page');
         var profilePage = document.getElementById('profile-page');
+        var aiPage = document.getElementById('ai-page');
         var boardArea = document.getElementById('board-area');
         var gameInfo = document.getElementById('game-info');
         var hero = document.querySelector('.hero');
 
-        // 视图互斥：同一时间只显示首页 / 联机对局 / 个人主页
+        // 视图互斥：同一时间只显示首页 / 人机设置 / 联机对局 / 个人主页
         function show(view) {
           homePage.hidden = view !== 'home';
           profilePage.hidden = view !== 'profile';
+          aiPage.hidden = view !== 'ai';
           boardArea.style.display = view === 'match' ? '' : 'none';
           if (view !== 'match') gameInfo.hidden = true;
           hero.hidden = view === 'profile';
@@ -117,6 +122,12 @@
         router.register('home', { mount: function () { show('home'); } });
         router.register('match', { mount: function () { show('match'); } });
         router.register('profile', { mount: function () { show('profile'); } });
+        router.register('ai', {
+          mount: function (ctx) {
+            show('ai');
+            window.Gomoku.AiView.mount(aiPage, ctx);
+          },
+        });
         window.Gomoku.router = router;
 
         document.getElementById('mode-ai').addEventListener('click', function () {

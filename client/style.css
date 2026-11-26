@@ -1183,6 +1183,151 @@ body {
   }
 }
 
+/* ========== 人机设置（T3-5 / AI-01） ========== */
+.ai-page {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.ai-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 30px;
+  border: 1px solid rgba(140, 98, 48, 0.16);
+  border-radius: 16px;
+  background: #fdf8ec;
+  box-shadow: 0 16px 38px rgba(90, 55, 22, 0.16);
+}
+
+.ai-title {
+  margin: 0;
+  text-align: center;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-size: 22px;
+  letter-spacing: 0.2em;
+  color: #4a2f14;
+}
+
+.ai-subtitle {
+  margin: -10px 0 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(110, 74, 34, 0.65);
+}
+
+.ai-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #6a4a26;
+}
+
+.segment-group {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border: 1px solid rgba(140, 98, 48, 0.22);
+  border-radius: 12px;
+  background: #fffdf6;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+}
+
+.segment:hover {
+  border-color: rgba(140, 98, 48, 0.45);
+  transform: translateY(-1px);
+}
+
+.segment.is-active {
+  border-color: #a35c2a;
+  background: #f7e8cf;
+  box-shadow: inset 0 0 0 1px rgba(163, 92, 42, 0.35);
+}
+
+.segment:focus-visible,
+.ai-start:focus-visible {
+  outline: 2px solid #b03a2e;
+  outline-offset: 3px;
+}
+
+.segment-name {
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: #4a2f14;
+}
+
+.segment-desc {
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(110, 74, 34, 0.7);
+}
+
+.ai-start {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 999px;
+  background: #4a3020;
+  color: #fdf5e6;
+  font-size: 15px;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(74, 48, 32, 0.28);
+  transition: background 0.2s ease, transform 0.12s ease;
+}
+
+.ai-start:hover {
+  background: #63412b;
+  transform: translateY(-1px);
+}
+
+.ai-rules {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(110, 74, 34, 0.7);
+}
+
+@media (max-width: 640px) {
+  .ai-panel {
+    padding: 22px 18px;
+  }
+
+  .segment-group {
+    grid-template-columns: 1fr;
+  }
+
+  .segment-group-colors {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (pointer: coarse) {
+  .segment,
+  .ai-start {
+    min-height: 44px;
+  }
+}
+
 /* 系统开启「减少动态效果」时缩短过渡（SET-02；棋盘下落动画由 app.js 关闭） */
 @media (prefers-reduced-motion: reduce) {
   *,
