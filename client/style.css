@@ -346,6 +346,18 @@ body {
   color: #4a2f14;
 }
 
+.result-title[data-state="draw"] {
+  color: #6a4a26;
+}
+
+/* 人机对局回合用时（T3-6 / AI-08：仅显示，不判负） */
+.round-time {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(110, 74, 34, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
 .result-title[data-state="win"] {
   color: #2f7d4f;
 }

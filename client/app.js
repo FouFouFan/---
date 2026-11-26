@@ -40,6 +40,9 @@ const boardView = window.Gomoku.BoardView.create(
 );
 boardView.setBoard(board);
 boardView.onMove(handleMoveIntent);
+window.Gomoku.boardView = boardView;
+window.Gomoku.playDropSound = playDropSound;
+window.Gomoku.ensureAudioCtx = ensureAudioCtx;
 
 const LEAVE_CONFIRM_TEXT = '离开将结束当前对局，退出将断开连接并判负。确定继续吗？';
 const reduceMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -408,6 +411,8 @@ function hideResultPanel() {
 }
 
 resultButtonEl.addEventListener('click', () => {
+  // 人机对局的结果浮层由 ai-game.js 自行处理（T3-6）
+  if (window.Gomoku.router && window.Gomoku.router.currentName() === 'game') return;
   hideResultPanel();
   if (!inGame) {
     // 对局已结束：回到匹配入口，便于直接开始下一局
@@ -485,3 +490,15 @@ function connect() {
 
 boardView.render();
 connect();
+
+/** 从人机对局返回联机页时，恢复 PvP 的棋盘引用与点击回调（T3-6） */
+function activatePvpBoard() {
+  boardView.setBoard(board);
+  boardView.onMove(handleMoveIntent);
+  const roundTimeEl = document.getElementById('round-time');
+  if (roundTimeEl) roundTimeEl.hidden = true;
+  countdownEl.title = '回合剩余时间';
+  updateTurnLabel();
+  boardView.render();
+}
+window.Gomoku.activatePvpBoard = activatePvpBoard;

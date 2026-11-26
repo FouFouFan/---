@@ -57,6 +57,7 @@
       <span id="turn-label" class="turn-label">等待开局…</span>
       <span class="info-divider" aria-hidden="true"></span>
       <span id="countdown" class="countdown" data-state="normal">5:00</span>
+      <span id="round-time" class="round-time" hidden></span>
     </div>
 
     <section id="board-area" class="board-area">
@@ -95,8 +96,10 @@
   <script src="profile-view.js"></script>
   <script src="router.js"></script>
   <script src="board-view.js"></script>
+  <script src="ai.js"></script>
   <script src="ai-view.js"></script>
   <script src="app.js"></script>
+  <script src="ai-game.js"></script>
   <script>
     // T2-1 路由 + T2-2 首页模式选择（NAV-01/02/04、PROF-02）
     // #/ai 由 T3-5 注册（AI-01）；#/game 由 T3-6 注册。
@@ -110,22 +113,53 @@
         var gameInfo = document.getElementById('game-info');
         var hero = document.querySelector('.hero');
 
-        // 视图互斥：同一时间只显示首页 / 人机设置 / 联机对局 / 个人主页
+        // 视图互斥：同一时间只显示首页 / 人机设置 / 对局 / 个人主页
         function show(view) {
           homePage.hidden = view !== 'home';
           profilePage.hidden = view !== 'profile';
           aiPage.hidden = view !== 'ai';
-          boardArea.style.display = view === 'match' ? '' : 'none';
-          if (view !== 'match') gameInfo.hidden = true;
+          var inBoard = view === 'match' || view === 'game';
+          boardArea.style.display = inBoard ? '' : 'none';
+          gameInfo.hidden = !inBoard;
           hero.hidden = view === 'profile';
         }
         router.register('home', { mount: function () { show('home'); } });
-        router.register('match', { mount: function () { show('match'); } });
+        router.register('match', {
+          mount: function () {
+            show('match');
+            if (window.Gomoku.activatePvpBoard) window.Gomoku.activatePvpBoard();
+          },
+        });
         router.register('profile', { mount: function () { show('profile'); } });
         router.register('ai', {
           mount: function (ctx) {
             show('ai');
             window.Gomoku.AiView.mount(aiPage, ctx);
+          },
+        });
+
+        // 人机对局控制（T3-6）：复用棋盘视图与结果浮层，不依赖 WebSocket
+        var aiGame = window.Gomoku.AiGame.create({
+          boardView: window.Gomoku.boardView,
+          playSound: window.Gomoku.playDropSound,
+          unlockAudio: window.Gomoku.ensureAudioCtx,
+          elements: {
+            gameInfo: gameInfo,
+            turnLabel: document.getElementById('turn-label'),
+            countdown: document.getElementById('countdown'),
+            roundTime: document.getElementById('round-time'),
+            matchOverlay: document.getElementById('match-overlay'),
+            resultOverlay: document.getElementById('result-overlay'),
+            resultTitle: document.getElementById('result-title'),
+            resultMessage: document.getElementById('result-message'),
+            resultButton: document.getElementById('result-button'),
+          },
+        });
+        window.Gomoku.aiGame = aiGame;
+        router.register('game', {
+          mount: function (ctx) {
+            show('game');
+            aiGame.mount(ctx);
           },
         });
         window.Gomoku.router = router;
