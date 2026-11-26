@@ -402,6 +402,9 @@ function showResultPanel(winner, reason) {
   resultTitleEl.textContent = won ? '你赢了' : '你输了';
   resultTitleEl.dataset.state = won ? 'win' : 'lose';
   resultMessageEl.textContent = won ? text.won : text.lost;
+  resultButtonEl.textContent = '知道了'; // 人机结算会改为「再来一局」，联机恢复默认
+  const resultHomeBtn = document.getElementById('result-home-button');
+  if (resultHomeBtn) resultHomeBtn.hidden = true;
   resultOverlayEl.hidden = false;
 }
 

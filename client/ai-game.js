@@ -43,10 +43,13 @@
     var random = deps.random || Math.random;
     var playSound = deps.playSound || function () {};
     var unlockAudio = deps.unlockAudio || function () {};
+    var statsStore = deps.statsStore || (typeof window !== 'undefined' ? window.Gomoku.StatsStore : null);
 
     var state = null;
     var tickTimer = null;
     var thinkTimer = null;
+    var lastConfig = null; // 再来一局保留难度与执子偏好（AI-09）
+    var gameSeq = 0; // 对局序号：保证同一毫秒内 ID 也唯一（AI-10 幂等键）
 
     function stopTimers() {
       if (tickTimer) clearInterval(tickTimer);
@@ -82,6 +85,25 @@
       boardView.setHoverColor(state.humanColor);
     }
 
+    /** 终局记账：仅调用一次，StatsStore 再按对局 ID 去重（AI-10 / STAT-02） */
+    function recordResult(winner, reason) {
+      if (state.recorded) return;
+      state.recorded = true;
+      if (!statsStore) return;
+
+      var outcome = reason === 'draw' ? 'draw' : winner === state.humanColor ? 'win' : 'loss';
+      var turns = state.board.reduce(function (total, row) {
+        return total + row.filter(Boolean).length;
+      }, 0);
+      statsStore.record({
+        id: state.id,
+        mode: 'ai',
+        result: outcome,
+        color: state.humanColor,
+        turns: turns,
+      });
+    }
+
     /** 终局：五连判胜、满盘判和（AI-07） */
     function finish(winner, reason) {
       state.finished = true;
@@ -105,7 +127,10 @@
       els.resultTitle.textContent = title;
       els.resultTitle.dataset.state = reason === 'draw' ? 'draw' : winner === state.humanColor ? 'win' : 'lose';
       els.resultMessage.textContent = message + ' · 本局用时 ' + formatClock(Date.now() - state.startedAt);
+      els.resultButton.textContent = '再来一局';
+      if (els.resultHomeButton) els.resultHomeButton.hidden = false;
       els.resultOverlay.hidden = false;
+      recordResult(winner, reason);
     }
 
     /** 检查终局；未结束则交换回合 */
@@ -168,8 +193,10 @@
     /** 开始新对局：保留难度与执子偏好（随机则重新随机） */
     function start(config) {
       stopTimers();
+      lastConfig = { difficulty: config.difficulty, preferredColor: config.preferredColor };
       var humanColor = resolveHumanColor(config.preferredColor, random);
       state = {
+        id: 'ai-' + Date.now() + '-' + (++gameSeq),
         board: AI.createBoard(),
         humanColor: humanColor,
         aiColor: AI.opposite(humanColor),
@@ -179,6 +206,7 @@
         turnStartedAt: Date.now(),
         thinking: false,
         finished: false,
+        recorded: false,
       };
 
       boardView.setBoard(state.board);
@@ -197,8 +225,17 @@
     }
 
     els.resultButton.addEventListener('click', function () {
-      els.resultOverlay.hidden = true; // 再来一局与战绩由 T3-7 接入
+      els.resultOverlay.hidden = true;
+      // AI-09：再来一局保留设置；随机执子会重新随机，棋盘与计时清零
+      if (lastConfig) start(lastConfig);
     });
+
+    if (els.resultHomeButton) {
+      els.resultHomeButton.addEventListener('click', function () {
+        els.resultOverlay.hidden = true;
+        window.Gomoku.router.navigate('home');
+      });
+    }
 
     return {
       /** 路由挂载：读取启动参数并开始；卸载时停止所有定时器 */

@@ -358,6 +358,34 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* 结算操作区（T3-7）：再来一局 / 回首页 */
+.result-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-home {
+  padding: 10px 22px;
+  border: 1px solid rgba(140, 98, 48, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #5a3f22;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.result-home:hover {
+  background: rgba(140, 98, 48, 0.1);
+}
+
+.result-home:focus-visible {
+  outline: 2px solid #b03a2e;
+  outline-offset: 3px;
+}
+
 .result-title[data-state="win"] {
   color: #2f7d4f;
 }

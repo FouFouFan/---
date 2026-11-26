@@ -75,7 +75,10 @@
         <div class="result-panel">
           <h2 id="result-title" class="result-title">对局结束</h2>
           <p id="result-message" class="result-message"></p>
-          <button id="result-button" class="result-button" type="button">知道了</button>
+          <div class="result-actions">
+            <button id="result-button" class="result-button" type="button">知道了</button>
+            <button id="result-home-button" class="result-home" type="button" hidden>回首页</button>
+          </div>
         </div>
       </div>
     </section>
@@ -153,6 +156,7 @@
             resultTitle: document.getElementById('result-title'),
             resultMessage: document.getElementById('result-message'),
             resultButton: document.getElementById('result-button'),
+            resultHomeButton: document.getElementById('result-home-button'),
           },
         });
         window.Gomoku.aiGame = aiGame;

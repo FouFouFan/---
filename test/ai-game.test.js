@@ -21,17 +21,28 @@ function makeDeps(random) {
     render() {},
   };
   function el() {
-    return { hidden: false, textContent: '', title: '', dataset: {}, addEventListener() {} };
+    const listeners = {};
+    return {
+      hidden: false,
+      textContent: '',
+      title: '',
+      dataset: {},
+      addEventListener(type, fn) { listeners[type] = fn; },
+      click() { if (listeners.click) listeners.click(); },
+    };
   }
   const elements = {
     gameInfo: el(), turnLabel: el(), countdown: el(), roundTime: el(),
     matchOverlay: el(), resultOverlay: el(), resultTitle: el(),
-    resultMessage: el(), resultButton: el(),
+    resultMessage: el(), resultButton: el(), resultHomeButton: el(),
   };
+  const records = [];
   return {
     boardView,
     elements,
     calls,
+    records,
+    statsStore: { record(entry) { records.push(entry); } },
     random: random || (() => 0),
     playSound() {},
     unlockAudio() {},
@@ -144,4 +155,91 @@ test('停止后不再执行待定的 AI 落子（路由卸载清理）', async (
 
   await wait(400);
   assert.equal(state.board.flat().filter(Boolean).length, 0);
+});
+
+// ---------- 结算与再开（T3-7 / AI-09/10） ----------
+
+/** 让人类在 (7,7) 连成五子，触发终局 */
+function winAsHuman(deps, game, state) {
+  [[7, 3], [7, 4], [7, 5], [7, 6]].forEach(([r, c]) => { state.board[r][c] = 'black'; });
+  deps.boardView.handler({ row: 7, col: 7 });
+}
+
+test('终局按 AI 模式记账一次，字段正确且幂等（AI-10 / STAT-02）', () => {
+  const deps = makeDeps();
+  const game = AiGame.create(deps);
+  const state = game.start({ difficulty: 'easy', preferredColor: 'black' });
+  winAsHuman(deps, game, state);
+
+  assert.equal(deps.records.length, 1);
+  const entry = deps.records[0];
+  assert.equal(entry.id, state.id);
+  assert.equal(entry.mode, 'ai');
+  assert.equal(entry.result, 'win');
+  assert.equal(entry.color, 'black');
+  assert.equal(entry.turns, 5);
+
+  // 终局后的重复点击不会再次记账
+  deps.boardView.handler({ row: 7, col: 8 });
+  deps.boardView.handler({ row: 7, col: 9 });
+  assert.equal(deps.records.length, 1);
+  game.stop();
+});
+
+test('和棋记为 draw，中途停止不记账（AI-10）', () => {
+  const drawDeps = makeDeps();
+  const drawGame = AiGame.create(drawDeps);
+  const drawState = drawGame.start({ difficulty: 'easy', preferredColor: 'black' });
+  drawState.board = [
+    ['black', 'white', 'black'],
+    ['white', 'black', 'white'],
+    ['black', 'white', null],
+  ];
+  drawDeps.boardView.handler({ row: 2, col: 2 });
+  assert.equal(drawDeps.records.length, 1);
+  assert.equal(drawDeps.records[0].result, 'draw');
+  drawGame.stop();
+
+  const quitDeps = makeDeps();
+  const quitGame = AiGame.create(quitDeps);
+  quitGame.start({ difficulty: 'easy', preferredColor: 'black' });
+  quitDeps.boardView.handler({ row: 7, col: 7 });
+  quitGame.stop(); // 对局未结束就离开
+  assert.equal(quitDeps.records.length, 0);
+});
+
+test('再来一局保留难度与执子，清空棋盘、计时与记账标记（AI-09）', () => {
+  const deps = makeDeps();
+  const game = AiGame.create(deps);
+  const first = game.start({ difficulty: 'easy', preferredColor: 'black' });
+  winAsHuman(deps, game, first);
+
+  deps.elements.resultButton.click();
+  const next = game.getState();
+  assert.notEqual(next, first);
+  assert.equal(next.humanColor, 'black');
+  assert.equal(next.difficulty, 'easy');
+  assert.equal(next.board.flat().filter(Boolean).length, 0);
+  assert.equal(next.recorded, false);
+  assert.equal(next.finished, false);
+  assert.notEqual(next.id, first.id);
+  assert.equal(deps.elements.resultOverlay.hidden, true);
+  assert.equal(deps.records.length, 1); // 新局未结束，不新增记录
+  game.stop();
+});
+
+test('随机执子在再来一局时重新随机（AI-09）', () => {
+  const sequence = [0.1, 0.9, 0.8, 0.7];
+  let index = 0;
+  const deps = makeDeps(() => sequence[index++ % sequence.length]);
+  const game = AiGame.create(deps);
+
+  const first = game.start({ difficulty: 'easy', preferredColor: 'auto' });
+  assert.equal(first.humanColor, 'black');
+
+  deps.elements.resultButton.click();
+  const next = game.getState();
+  assert.equal(next.humanColor, 'white'); // 重新随机为白
+  assert.equal(next.aiColor, 'black');
+  game.stop();
 });
