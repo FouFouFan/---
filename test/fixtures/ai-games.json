@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "空盘天元-简单",
+      "difficulty": "easy",
+      "color": "black",
+      "seed": 1,
+      "stones": [],
+      "expect": { "row": 7, "col": 7 }
+    },
+    {
+      "name": "空盘天元-普通",
+      "difficulty": "normal",
+      "color": "black",
+      "seed": 1,
+      "stones": [],
+      "expect": { "row": 7, "col": 7 }
+    },
+    {
+      "name": "空盘天元-困难",
+      "difficulty": "hard",
+      "color": "black",
+      "seed": 1,
+      "timeLimit": 200,
+      "stones": [],
+      "expect": { "row": 7, "col": 7 }
+    },
+    {
+      "name": "己方一步成五必下",
+      "difficulty": "hard",
+      "color": "black",
+      "seed": 2,
+      "timeLimit": 200,
+      "stones": [[7, 3, "black"], [7, 4, "black"], [7, 5, "black"], [7, 6, "black"]],
+      "expectOneOf": [[7, 2], [7, 7]]
+    },
+    {
+      "name": "对手一步成五必堵",
+      "difficulty": "normal",
+      "color": "black",
+      "seed": 3,
+      "stones": [[3, 5, "white"], [4, 5, "white"], [5, 5, "white"], [6, 5, "white"]],
+      "expectOneOf": [[2, 5], [7, 5]]
+    },
+    {
+      "name": "活三防守-普通",
+      "difficulty": "normal",
+      "color": "black",
+      "seed": 4,
+      "stones": [[7, 5, "white"], [7, 6, "white"], [7, 7, "white"]],
+      "expectOneOf": [[7, 4], [7, 8]]
+    },
+    {
+      "name": "活三防守-困难",
+      "difficulty": "hard",
+      "color": "black",
+      "seed": 4,
+      "timeLimit": 300,
+      "stones": [[7, 5, "white"], [7, 6, "white"], [7, 7, "white"]],
+      "expectOneOf": [[7, 4], [7, 8]]
+    },
+    {
+      "name": "斜线必胜",
+      "difficulty": "normal",
+      "color": "white",
+      "seed": 5,
+      "stones": [[3, 3, "white"], [4, 4, "white"], [5, 5, "white"], [6, 6, "white"]],
+      "expectOneOf": [[2, 2], [7, 7]]
+    },
+    {
+      "name": "满盘和棋-最后一手",
+      "difficulty": "normal",
+      "color": "black",
+      "seed": 6,
+      "size": 3,
+      "stones": [[0, 0, "black"], [0, 1, "white"], [0, 2, "black"], [1, 0, "white"], [1, 1, "black"], [1, 2, "white"], [2, 0, "black"], [2, 1, "white"]],
+      "expect": { "row": 2, "col": 2 },
+      "expectDraw": true
+    }
+  ],
+  "legality": {
+    "games": 100,
+    "maxMoves": 60,
+    "seedBase": 1000,
+    "timeLimit": 60,
+    "report": "ai-games-report.json"
+  }
+}

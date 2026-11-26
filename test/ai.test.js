@@ -274,3 +274,94 @@ test('自动对局中每步均落在空位，绝不占用已落子（AI-03）', 
     }
   }
 });
+
+// ---------- 测试夹具（T3-4 / E-11） ----------
+
+const fs = require('node:fs');
+const path = require('node:path');
+const FIXTURE_DIR = path.join(__dirname, 'fixtures');
+const fixture = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'ai-games.json'), 'utf8'));
+
+/** 按夹具落子列表构建棋盘（支持自定义尺寸） */
+function buildBoard(item) {
+  const board = AI.createBoard(item.size);
+  for (const [row, col, color] of item.stones) board[row][col] = color;
+  return board;
+}
+
+test('固定局面夹具：空盘天元/必胜/必防/活三防守/满盘和棋（E-11）', () => {
+  for (const item of fixture.cases) {
+    const board = buildBoard(item);
+    const before = JSON.stringify(board);
+    const move = AI.chooseMove(board, {
+      color: item.color,
+      difficulty: item.difficulty,
+      seed: item.seed,
+      timeLimit: item.timeLimit,
+    });
+
+    assert.ok(move, item.name + ' 应返回落点');
+    assert.ok(AI.isLegalMove(board, move.row, move.col), item.name + ' 落点必须合法');
+    assert.equal(JSON.stringify(board), before, item.name + ' 不应修改输入棋盘');
+
+    if (item.expect) assert.deepEqual(move, item.expect, item.name);
+    if (item.expectOneOf) {
+      assert.ok(
+        item.expectOneOf.some((point) => move.row === point[0] && move.col === point[1]),
+        item.name + ' 实际落点 (' + move.row + ',' + move.col + ')'
+      );
+    }
+    if (item.expectDraw) {
+      board[move.row][move.col] = item.color;
+      assert.equal(AI.boardIsFull(board), true, item.name + ' 应下满');
+      assert.equal(AI.hasFive(board, move.row, move.col, item.color), false, item.name + ' 应为和棋');
+    }
+  }
+});
+
+test('100 局自动对局全部合法，记录落盘（E-11 / AI-03）', { timeout: 180000 }, () => {
+  const config = fixture.legality;
+  const games = [];
+
+  for (let index = 0; index < config.games; index++) {
+    const difficulty = index % 10 === 0 ? 'hard' : index % 5 === 0 ? 'normal' : 'easy';
+    const board = AI.createBoard();
+    let color = 'black';
+    let moves = 0;
+    let result = 'draw';
+
+    for (let step = 0; step < config.maxMoves; step++) {
+      const move = AI.chooseMove(board, {
+        color,
+        difficulty,
+        seed: config.seedBase + index * 100 + step,
+        timeLimit: config.timeLimit,
+      });
+
+      assert.ok(move, '第 ' + index + ' 局第 ' + step + ' 手应返回落点');
+      assert.ok(
+        AI.isLegalMove(board, move.row, move.col),
+        '第 ' + index + ' 局第 ' + step + ' 手非法 (' + move.row + ',' + move.col + ')'
+      );
+
+      board[move.row][move.col] = color;
+      moves++;
+      if (AI.hasFive(board, move.row, move.col, color)) {
+        result = color;
+        break;
+      }
+      color = AI.opposite(color);
+    }
+
+    games.push({ index, seed: config.seedBase + index * 100, difficulty, moves, result });
+  }
+
+  const report = { totalGames: games.length, allLegal: true, maxMoves: config.maxMoves, games };
+  const reportPath = path.join(FIXTURE_DIR, config.report);
+  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
+
+  assert.equal(games.length, 100);
+  const written = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  assert.equal(written.totalGames, 100);
+  assert.equal(written.allLegal, true);
+});

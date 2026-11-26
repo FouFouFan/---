@@ -1,0 +1,707 @@
+{
+  "totalGames": 100,
+  "allLegal": true,
+  "maxMoves": 60,
+  "games": [
+    {
+      "index": 0,
+      "seed": 1000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 1,
+      "seed": 1100,
+      "difficulty": "easy",
+      "moves": 24,
+      "result": "white"
+    },
+    {
+      "index": 2,
+      "seed": 1200,
+      "difficulty": "easy",
+      "moves": 25,
+      "result": "black"
+    },
+    {
+      "index": 3,
+      "seed": 1300,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 4,
+      "seed": 1400,
+      "difficulty": "easy",
+      "moves": 27,
+      "result": "black"
+    },
+    {
+      "index": 5,
+      "seed": 1500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 6,
+      "seed": 1600,
+      "difficulty": "easy",
+      "moves": 20,
+      "result": "white"
+    },
+    {
+      "index": 7,
+      "seed": 1700,
+      "difficulty": "easy",
+      "moves": 12,
+      "result": "white"
+    },
+    {
+      "index": 8,
+      "seed": 1800,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 9,
+      "seed": 1900,
+      "difficulty": "easy",
+      "moves": 35,
+      "result": "black"
+    },
+    {
+      "index": 10,
+      "seed": 2000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 11,
+      "seed": 2100,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 12,
+      "seed": 2200,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 13,
+      "seed": 2300,
+      "difficulty": "easy",
+      "moves": 50,
+      "result": "white"
+    },
+    {
+      "index": 14,
+      "seed": 2400,
+      "difficulty": "easy",
+      "moves": 23,
+      "result": "black"
+    },
+    {
+      "index": 15,
+      "seed": 2500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 16,
+      "seed": 2600,
+      "difficulty": "easy",
+      "moves": 18,
+      "result": "white"
+    },
+    {
+      "index": 17,
+      "seed": 2700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 18,
+      "seed": 2800,
+      "difficulty": "easy",
+      "moves": 13,
+      "result": "black"
+    },
+    {
+      "index": 19,
+      "seed": 2900,
+      "difficulty": "easy",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 20,
+      "seed": 3000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 21,
+      "seed": 3100,
+      "difficulty": "easy",
+      "moves": 32,
+      "result": "white"
+    },
+    {
+      "index": 22,
+      "seed": 3200,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 23,
+      "seed": 3300,
+      "difficulty": "easy",
+      "moves": 33,
+      "result": "black"
+    },
+    {
+      "index": 24,
+      "seed": 3400,
+      "difficulty": "easy",
+      "moves": 27,
+      "result": "black"
+    },
+    {
+      "index": 25,
+      "seed": 3500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 26,
+      "seed": 3600,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 27,
+      "seed": 3700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 28,
+      "seed": 3800,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 29,
+      "seed": 3900,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 30,
+      "seed": 4000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 31,
+      "seed": 4100,
+      "difficulty": "easy",
+      "moves": 48,
+      "result": "white"
+    },
+    {
+      "index": 32,
+      "seed": 4200,
+      "difficulty": "easy",
+      "moves": 28,
+      "result": "white"
+    },
+    {
+      "index": 33,
+      "seed": 4300,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 34,
+      "seed": 4400,
+      "difficulty": "easy",
+      "moves": 13,
+      "result": "black"
+    },
+    {
+      "index": 35,
+      "seed": 4500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 36,
+      "seed": 4600,
+      "difficulty": "easy",
+      "moves": 50,
+      "result": "white"
+    },
+    {
+      "index": 37,
+      "seed": 4700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 38,
+      "seed": 4800,
+      "difficulty": "easy",
+      "moves": 34,
+      "result": "white"
+    },
+    {
+      "index": 39,
+      "seed": 4900,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 40,
+      "seed": 5000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 41,
+      "seed": 5100,
+      "difficulty": "easy",
+      "moves": 45,
+      "result": "black"
+    },
+    {
+      "index": 42,
+      "seed": 5200,
+      "difficulty": "easy",
+      "moves": 25,
+      "result": "black"
+    },
+    {
+      "index": 43,
+      "seed": 5300,
+      "difficulty": "easy",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 44,
+      "seed": 5400,
+      "difficulty": "easy",
+      "moves": 46,
+      "result": "white"
+    },
+    {
+      "index": 45,
+      "seed": 5500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 46,
+      "seed": 5600,
+      "difficulty": "easy",
+      "moves": 47,
+      "result": "black"
+    },
+    {
+      "index": 47,
+      "seed": 5700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 48,
+      "seed": 5800,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 49,
+      "seed": 5900,
+      "difficulty": "easy",
+      "moves": 13,
+      "result": "black"
+    },
+    {
+      "index": 50,
+      "seed": 6000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 51,
+      "seed": 6100,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 52,
+      "seed": 6200,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 53,
+      "seed": 6300,
+      "difficulty": "easy",
+      "moves": 13,
+      "result": "black"
+    },
+    {
+      "index": 54,
+      "seed": 6400,
+      "difficulty": "easy",
+      "moves": 46,
+      "result": "white"
+    },
+    {
+      "index": 55,
+      "seed": 6500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 56,
+      "seed": 6600,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 57,
+      "seed": 6700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 58,
+      "seed": 6800,
+      "difficulty": "easy",
+      "moves": 38,
+      "result": "white"
+    },
+    {
+      "index": 59,
+      "seed": 6900,
+      "difficulty": "easy",
+      "moves": 14,
+      "result": "white"
+    },
+    {
+      "index": 60,
+      "seed": 7000,
+      "difficulty": "hard",
+      "moves": 11,
+      "result": "black"
+    },
+    {
+      "index": 61,
+      "seed": 7100,
+      "difficulty": "easy",
+      "moves": 38,
+      "result": "white"
+    },
+    {
+      "index": 62,
+      "seed": 7200,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 63,
+      "seed": 7300,
+      "difficulty": "easy",
+      "moves": 23,
+      "result": "black"
+    },
+    {
+      "index": 64,
+      "seed": 7400,
+      "difficulty": "easy",
+      "moves": 40,
+      "result": "white"
+    },
+    {
+      "index": 65,
+      "seed": 7500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 66,
+      "seed": 7600,
+      "difficulty": "easy",
+      "moves": 31,
+      "result": "black"
+    },
+    {
+      "index": 67,
+      "seed": 7700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 68,
+      "seed": 7800,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 69,
+      "seed": 7900,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 70,
+      "seed": 8000,
+      "difficulty": "hard",
+      "moves": 11,
+      "result": "black"
+    },
+    {
+      "index": 71,
+      "seed": 8100,
+      "difficulty": "easy",
+      "moves": 36,
+      "result": "white"
+    },
+    {
+      "index": 72,
+      "seed": 8200,
+      "difficulty": "easy",
+      "moves": 14,
+      "result": "white"
+    },
+    {
+      "index": 73,
+      "seed": 8300,
+      "difficulty": "easy",
+      "moves": 22,
+      "result": "white"
+    },
+    {
+      "index": 74,
+      "seed": 8400,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 75,
+      "seed": 8500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 76,
+      "seed": 8600,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 77,
+      "seed": 8700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 78,
+      "seed": 8800,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 79,
+      "seed": 8900,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 80,
+      "seed": 9000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 81,
+      "seed": 9100,
+      "difficulty": "easy",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 82,
+      "seed": 9200,
+      "difficulty": "easy",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 83,
+      "seed": 9300,
+      "difficulty": "easy",
+      "moves": 25,
+      "result": "black"
+    },
+    {
+      "index": 84,
+      "seed": 9400,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 85,
+      "seed": 9500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 86,
+      "seed": 9600,
+      "difficulty": "easy",
+      "moves": 25,
+      "result": "black"
+    },
+    {
+      "index": 87,
+      "seed": 9700,
+      "difficulty": "easy",
+      "moves": 33,
+      "result": "black"
+    },
+    {
+      "index": 88,
+      "seed": 9800,
+      "difficulty": "easy",
+      "moves": 51,
+      "result": "black"
+    },
+    {
+      "index": 89,
+      "seed": 9900,
+      "difficulty": "easy",
+      "moves": 48,
+      "result": "white"
+    },
+    {
+      "index": 90,
+      "seed": 10000,
+      "difficulty": "hard",
+      "moves": 21,
+      "result": "black"
+    },
+    {
+      "index": 91,
+      "seed": 10100,
+      "difficulty": "easy",
+      "moves": 24,
+      "result": "white"
+    },
+    {
+      "index": 92,
+      "seed": 10200,
+      "difficulty": "easy",
+      "moves": 13,
+      "result": "black"
+    },
+    {
+      "index": 93,
+      "seed": 10300,
+      "difficulty": "easy",
+      "moves": 24,
+      "result": "white"
+    },
+    {
+      "index": 94,
+      "seed": 10400,
+      "difficulty": "easy",
+      "moves": 24,
+      "result": "white"
+    },
+    {
+      "index": 95,
+      "seed": 10500,
+      "difficulty": "normal",
+      "moves": 17,
+      "result": "black"
+    },
+    {
+      "index": 96,
+      "seed": 10600,
+      "difficulty": "easy",
+      "moves": 32,
+      "result": "white"
+    },
+    {
+      "index": 97,
+      "seed": 10700,
+      "difficulty": "easy",
+      "moves": 60,
+      "result": "draw"
+    },
+    {
+      "index": 98,
+      "seed": 10800,
+      "difficulty": "easy",
+      "moves": 23,
+      "result": "black"
+    },
+    {
+      "index": 99,
+      "seed": 10900,
+      "difficulty": "easy",
+      "moves": 29,
+      "result": "black"
+    }
+  ]
+}
