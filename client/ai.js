@@ -1,6 +1,4 @@
-// AI 基础层（T3-1）：棋盘工具、四方向模式评分与候选点生成。
-// 全部为纯函数：不读写 DOM、不建立网络连接，输入棋盘不会被修改。
-// 双环境：Node require（单元测试）+ 浏览器 window.Gomoku.AI。
+// AI 引擎（T3-2/T3-3）：纯函数棋盘工具、模式评分、候选、搜索与兜底；不读写 DOM/网络。
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory();
@@ -253,7 +251,6 @@
   function candidateLimit(depth) {
     return depth >= 4 ? 12 : depth === 3 ? 8 : depth === 2 ? 5 : 4;
   }
-
   /** 叶子评估：己方最佳威胁减去对手最佳威胁（略偏防守） */
   function evaluateBoard(board, color) {
     var mine = generateCandidates(board, color, { limit: 6 })[0];
@@ -264,20 +261,16 @@
   function negamax(board, color, depth, alpha, beta, aiColor, deadline) {
     if (Date.now() > deadline) throw TIMEOUT;
     if (depth === 0) return evaluateBoard(board, aiColor);
-
     var moves = generateCandidates(board, color, { limit: candidateLimit(depth) });
     if (!moves.length) return 0;
     var best = -Infinity;
     for (var i = 0; i < moves.length; i++) {
-      var move = moves[i];
-      var score;
+      var move = moves[i], score;
       board[move.row][move.col] = color;
       try {
-        if (hasFive(board, move.row, move.col, color)) {
-          score = color === aiColor ? WIN_SCORE - (10 - depth) : -(WIN_SCORE - (10 - depth));
-        } else {
-          score = -negamax(board, opposite(color), depth - 1, -beta, -alpha, aiColor, deadline);
-        }
+        score = hasFive(board, move.row, move.col, color)
+          ? (color === aiColor ? WIN_SCORE - (10 - depth) : -(WIN_SCORE - (10 - depth)))
+          : -negamax(board, opposite(color), depth - 1, -beta, -alpha, aiColor, deadline);
       } finally {
         board[move.row][move.col] = null; // 超时抛出时也要撤销，保证棋盘不被污染
       }
@@ -296,22 +289,16 @@
     try {
       for (var i = 0; i < moves.length; i++) {
         if (Date.now() > deadline) throw TIMEOUT;
-        var move = moves[i];
-        var score;
+        var move = moves[i], score;
         board[move.row][move.col] = color;
         try {
-          if (hasFive(board, move.row, move.col, color)) {
-            score = WIN_SCORE;
-          } else {
-            score = -negamax(board, opposite(color), depth - 1, -Infinity, -alpha, color, deadline);
-          }
+          score = hasFive(board, move.row, move.col, color)
+            ? WIN_SCORE
+            : -negamax(board, opposite(color), depth - 1, -Infinity, -alpha, color, deadline);
         } finally {
           board[move.row][move.col] = null;
         }
-        if (score > bestScore) {
-          bestScore = score;
-          bestMove = move;
-        }
+        if (score > bestScore) { bestScore = score; bestMove = move; }
         if (score > alpha) alpha = score;
       }
     } catch (error) {
@@ -339,11 +326,27 @@
     }
     return best || { row: candidates[0].row, col: candidates[0].col };
   }
-
-  /** 选择落子：[options] color/difficulty/seed/timeLimit；满盘返回 null */
-  function chooseMove(board, options) {
-    var opts = options || {};
-    var color = opts.color === 'white' ? 'white' : 'black';
+  /** 任意合法空位；无则返回 null */
+  function firstLegalMove(board) {
+    var moves = getLegalMoves(board);
+    return moves.length ? moves[0] : null;
+  }
+  /** 兜底：优先己方启发式最优点，异常或非法时退回任意空位（AI-03） */
+  function fallbackMove(board, color) {
+    try {
+      var best = generateCandidates(board, color, { limit: MAX_CANDIDATES })[0];
+      if (best && isLegalMove(board, best.row, best.col)) return { row: best.row, col: best.col };
+    } catch (error) {
+      // 评估异常时忽略，继续走任意空位
+    }
+    try {
+      return firstLegalMove(board);
+    } catch (error) {
+      return null;
+    }
+  }
+  /** 正常选点流程；异常由 chooseMove 统一捕获 */
+  function pickMove(board, opts, color) {
     var difficulty = opts.difficulty || 'normal';
     var rng = createRng(opts.seed === undefined ? Date.now() : opts.seed);
     var candidates = generateCandidates(board, color);
@@ -354,47 +357,44 @@
     if (winning) return winning;
     var blocking = findWinningMove(board, opposite(color));
     if (blocking) return blocking;
+    if (difficulty === 'easy') return easyMove(candidates, rng);
+    if (difficulty === 'hard') return hardMove(board, color, candidates, opts);
+    var result = searchRoot(board, color, 2, Infinity);
+    return result ? result.move : candidates[0];
+  }
 
-    var move;
-    if (difficulty === 'easy') {
-      move = easyMove(candidates, rng);
-    } else if (difficulty === 'hard') {
-      move = hardMove(board, color, candidates, opts);
-    } else {
-      var result = searchRoot(board, color, 2, Infinity);
-      move = result ? result.move : candidates[0];
+  /** 选择落子：[options] color/difficulty/seed/timeLimit；满盘返回 null */
+  function chooseMove(board, options) {
+    var opts = options || {};
+    var color = opts.color === 'white' ? 'white' : 'black';
+    var move = null;
+
+    if (Array.isArray(board) && board.length && Array.isArray(board[0])) {
+      try {
+        move = pickMove(board, opts, color);
+      } catch (error) {
+        if (typeof console !== 'undefined') console.warn('[ai] chooseMove fallback:', error);
+      }
     }
 
-    // 硬约束：返回前再次校验坐标与空位（AI-03）
-    if (!move || !isLegalMove(board, move.row, move.col)) {
-      move = { row: candidates[0].row, col: candidates[0].col };
+    if (move && isLegalMove(board, move.row, move.col)) {
+      return { row: move.row, col: move.col };
     }
-    return move;
+    try {
+      return fallbackMove(board, color);
+    } catch (error) {
+      return null;
+    }
   }
 
   return {
-    SIZE: SIZE,
-    MAX_CANDIDATES: MAX_CANDIDATES,
-    NEIGHBOR_RADIUS: NEIGHBOR_RADIUS,
-    DEFAULT_TIME_LIMIT: DEFAULT_TIME_LIMIT,
-    SCORES: SCORES,
-    DIRECTIONS: DIRECTIONS,
-    createBoard: createBoard,
-    cloneBoard: cloneBoard,
-    inBounds: inBounds,
-    isLegalMove: isLegalMove,
-    getLegalMoves: getLegalMoves,
-    boardIsFull: boardIsFull,
-    opposite: opposite,
-    countLine: countLine,
-    hasFive: hasFive,
-    lineString: lineString,
-    scoreLine: scoreLine,
-    evaluatePoint: evaluatePoint,
-    generateCandidates: generateCandidates,
-    createRng: createRng,
-    findWinningMove: findWinningMove,
-    evaluateBoard: evaluateBoard,
-    chooseMove: chooseMove,
+    SIZE: SIZE, MAX_CANDIDATES: MAX_CANDIDATES, NEIGHBOR_RADIUS: NEIGHBOR_RADIUS,
+    DEFAULT_TIME_LIMIT: DEFAULT_TIME_LIMIT, SCORES: SCORES, DIRECTIONS: DIRECTIONS,
+    createBoard: createBoard, cloneBoard: cloneBoard, inBounds: inBounds,
+    isLegalMove: isLegalMove, getLegalMoves: getLegalMoves, boardIsFull: boardIsFull,
+    opposite: opposite, countLine: countLine, hasFive: hasFive, lineString: lineString,
+    scoreLine: scoreLine, evaluatePoint: evaluatePoint,
+    generateCandidates: generateCandidates, createRng: createRng,
+    findWinningMove: findWinningMove, evaluateBoard: evaluateBoard, chooseMove: chooseMove,
   };
 });

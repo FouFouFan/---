@@ -224,3 +224,53 @@ test('简单档 Top3 随机仍可复现，空盘首手为天元', () => {
   assert.deepEqual(a, b);
   assert.ok(AI.isLegalMove(board, a.row, a.col));
 });
+
+// ---------- 兜底与异常（T3-3） ----------
+
+test('时限立即耗尽仍返回合法空位，不抛错（AI-03）', () => {
+  const board = boardWith([[7, 7], [7, 8], [8, 7]], 'white');
+  for (const timeLimit of [0, 1]) {
+    const move = AI.chooseMove(board, { color: 'black', difficulty: 'hard', seed: 5, timeLimit });
+    assert.ok(move);
+    assert.ok(AI.isLegalMove(board, move.row, move.col));
+  }
+});
+
+test('时钟异常导致搜索失败时回退到合法落点（AI-03）', () => {
+  const board = boardWith([[7, 7], [8, 8]], 'white');
+  const originalNow = Date.now;
+  const originalWarn = console.warn;
+  Date.now = () => {
+    throw new Error('clock broken');
+  };
+  console.warn = () => {};
+
+  try {
+    const move = AI.chooseMove(board, { color: 'black', difficulty: 'hard', seed: 1 });
+    assert.ok(move);
+    assert.ok(AI.isLegalMove(board, move.row, move.col));
+  } finally {
+    Date.now = originalNow;
+    console.warn = originalWarn;
+  }
+});
+
+test('非法棋盘输入返回 null 且不抛错（AI-03）', () => {
+  assert.equal(AI.chooseMove(null, { color: 'black' }), null);
+  assert.equal(AI.chooseMove([], { color: 'black' }), null);
+  assert.equal(AI.chooseMove([null], { color: 'black' }), null);
+});
+
+test('自动对局中每步均落在空位，绝不占用已落子（AI-03）', () => {
+  for (let game = 0; game < 3; game++) {
+    const board = AI.createBoard();
+    let color = 'black';
+    for (let step = 0; step < 60; step++) {
+      const move = AI.chooseMove(board, { color, difficulty: 'easy', seed: game * 100 + step + 1 });
+      assert.ok(move, '第 ' + step + ' 步应返回落点');
+      assert.ok(AI.isLegalMove(board, move.row, move.col), '落点必须为空位');
+      board[move.row][move.col] = color;
+      color = color === 'black' ? 'white' : 'black';
+    }
+  }
+});
