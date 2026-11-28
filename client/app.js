@@ -119,8 +119,16 @@ function handleMoveIntent(cellPoint) {
 
 /**
  * WebSocket 连接：建立与游戏服务端的连接并展示连接状态。
+ * 地址跟随当前访问的主机名（局域网/本机均自动生效），不再硬编码 IP。
+ * 页面走 https 时用 wss，否则用 ws；服务端端口固定 3000。
  */
-const WS_URL = 'ws://10.21.174.122:3000';
+function resolveWsUrl() {
+  const secure = window.location.protocol === 'https:';
+  const host = window.location.hostname || 'localhost';
+  return `${secure ? 'wss:' : 'ws:'}//${host}:3000`;
+}
+
+const WS_URL = resolveWsUrl();
 
 const statusEl = document.getElementById('connection-status');
 
