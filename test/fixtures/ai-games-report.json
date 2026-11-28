@@ -427,7 +427,7 @@
       "index": 60,
       "seed": 7000,
       "difficulty": "hard",
-      "moves": 21,
+      "moves": 11,
       "result": "black"
     },
     {
@@ -567,7 +567,7 @@
       "index": 80,
       "seed": 9000,
       "difficulty": "hard",
-      "moves": 51,
+      "moves": 11,
       "result": "black"
     },
     {

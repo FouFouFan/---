@@ -4,7 +4,7 @@ const os = require('node:os');
 const { WebSocketServer } = require('ws');
 const { parse, send } = require('./protocol');
 const { Matchmaker } = require('./matchmaker');
-const { validateMove, applyMove, handleDisconnect } = require('./game');
+const { validateMove, applyMove, handleDisconnect, resign } = require('./game');
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -165,6 +165,13 @@ wss.on('connection', (ws, req) => {
               .join('-')}`
           );
         }
+        break;
+      }
+
+      case 'resign': {
+        const room = matchmaker.rooms.get(ws.roomId);
+        const accepted = resign(room, ws);
+        log(`client#${ws.clientId} resign (${accepted ? 'accepted' : 'ignored'})`);
         break;
       }
 

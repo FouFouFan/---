@@ -106,6 +106,21 @@ function endGame(room, winner, reason, positions) {
 }
 
 /**
+ * 认输（PVP-11）：认输方判负、对手胜，reason='resign'，停止回合计时。
+ * 对局已结束或不在房间时返回 false（幂等，不重复广播）。
+ */
+function resign(room, ws) {
+  if (!room || room.finished) return false;
+
+  const player = getPlayer(room, ws);
+  if (!player) return false;
+
+  const winner = player.color === 'black' ? 'white' : 'black';
+  endGame(room, winner, 'resign');
+  return true;
+}
+
+/**
  * 断线处理（T1-9）：通知对手、判断线方负并结束对局。
  */
 function handleDisconnect(room, ws) {
@@ -172,6 +187,9 @@ function applyMove(room, ws, row, col) {
   if (win) {
     // 五连成局：广播 game_over 并结束对局
     endGame(room, player.color, 'win', win.positions);
+  } else if (room.board.isFull()) {
+    // 225 子填满且无五连：和棋，winner 为 null（PVP-10）
+    endGame(room, null, 'draw');
   } else {
     // 进入下一回合，重置 5 分钟倒计时
     startTurnTimer(room);
@@ -187,6 +205,7 @@ module.exports = {
   startTurnTimer,
   clearTurnTimer,
   endGame,
+  resign,
   handleDisconnect,
   getPlayer,
   REASON_TEXT,

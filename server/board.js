@@ -40,6 +40,11 @@ class Board {
     return this.grid[row][col] === EMPTY;
   }
 
+  /** 棋盘是否已满（15×15 共 225 子），用于和棋判定（PVP-10） */
+  isFull() {
+    return this.grid.every((row) => row.every((cell) => cell !== EMPTY));
+  }
+
   /** 返回棋盘的深拷贝快照，供 game_state 广播使用 */
   snapshot() {
     return this.grid.map((row) => row.slice());
