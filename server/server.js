@@ -6,15 +6,16 @@ const { parse, send } = require('./protocol');
 const { Matchmaker } = require('./matchmaker');
 const { validateMove, applyMove, handleDisconnect, resign } = require('./game');
 
-const PORT = Number(process.env.PORT) || 3000;
+// PORT=0 时由系统分配空闲端口（集成测试用）
+const PORT = Number(process.env.PORT ?? 3000);
 
 /** 单条消息上限 8KB（PVP-09） */
 const MAX_PAYLOAD_BYTES = 8 * 1024;
 /** 限流：每连接 5 秒内最多 20 条（PVP-09） */
 const RATE_WINDOW_MS = 5000;
 const RATE_MAX_MESSAGES = 20;
-/** 心跳：每 30 秒 ping 一次，连续 2 次无 pong 终止连接（PVP-06） */
-const HEARTBEAT_INTERVAL_MS = 30 * 1000;
+/** 心跳：每 30 秒 ping 一次，连续 2 次无 pong 终止连接（PVP-06）；集成测试可用环境变量缩短 */
+const HEARTBEAT_INTERVAL_MS = Number(process.env.HEARTBEAT_INTERVAL_MS) || 30 * 1000;
 
 const wss = new WebSocketServer({ port: PORT, maxPayload: MAX_PAYLOAD_BYTES });
 const matchmaker = new Matchmaker();
@@ -79,9 +80,10 @@ function resetStaleRoomState(ws) {
 }
 
 wss.on('listening', () => {
-  log(`WebSocket server listening on ws://localhost:${PORT}`);
+  const { port } = wss.address(); // PORT=0 时由系统分配，日志打印实际端口
+  log(`WebSocket server listening on ws://localhost:${port}`);
   for (const address of lanAddresses()) {
-    log(`LAN access: ws://${address}:${PORT}`);
+    log(`LAN access: ws://${address}:${port}`);
   }
 });
 
