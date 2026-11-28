@@ -12,6 +12,10 @@ const gameInfoEl = document.getElementById('game-info');
 const turnLabelEl = document.getElementById('turn-label');
 const countdownEl = document.getElementById('countdown');
 const matchOverlayEl = document.getElementById('match-overlay');
+const opponentInfoEl = document.getElementById('opponent-info');
+const opponentAvatarEl = document.getElementById('opponent-avatar');
+const opponentNameEl = document.getElementById('opponent-name');
+const opponentRoomEl = document.getElementById('opponent-room');
 const resultOverlayEl = document.getElementById('result-overlay');
 const resultTitleEl = document.getElementById('result-title');
 const resultMessageEl = document.getElementById('result-message');
@@ -308,6 +312,7 @@ function handleGameMessage(message) {
       matchView.showFound();
       hideResultPanel();
       gameInfoEl.hidden = false;
+      renderOpponent(message.opponent, message.roomId);
       countdownEl.textContent = '5:00';
       countdownEl.dataset.state = 'normal';
       for (const row of board) row.fill(null);
@@ -318,6 +323,7 @@ function handleGameMessage(message) {
 
     case 'match_waiting':
       searching = true;
+      opponentInfoEl.hidden = true; // 新一轮排队，隐藏上一局对手信息
       matchView.showWaiting();
       break;
 
@@ -392,6 +398,24 @@ function rollbackPendingMove() {
   boardView.render();
 }
 
+/** 本机档案用于匹配（仅发三个白名单字段，自定义头像不走协议） */
+function matchProfile() {
+  const profile = window.Gomoku.ProfileStore.get();
+  return { playerId: profile.playerId, nickname: profile.nickname, avatarId: profile.avatarId };
+}
+
+/** 对手信息（T4-9 / PVP-04）：缺字段降级「对手」，头像非法回退默认 */
+function renderOpponent(opponent, roomId) {
+  const info = opponent && typeof opponent === 'object' ? opponent : {};
+  const nickname = typeof info.nickname === 'string' && info.nickname.trim() ? info.nickname.trim() : '对手';
+  const avatarId = typeof info.avatarId === 'string' ? info.avatarId : 'maple';
+
+  opponentNameEl.textContent = nickname;
+  opponentAvatarEl.innerHTML = window.Gomoku.Avatars.svg(avatarId, 22);
+  opponentRoomEl.textContent = roomId ? '房间 ' + roomId : '';
+  opponentInfoEl.hidden = false;
+}
+
 /** 匹配视图（T4-7）：等待时长、取消、重试与断线提示 */
 const matchView = window.Gomoku.MatchView.create({
   root: matchOverlayEl,
@@ -420,7 +444,7 @@ function startMatch() {
 
   searching = true;
   matchView.showWaiting();
-  sendMessage({ type: 'match_request' });
+  sendMessage({ type: 'match_request', profile: matchProfile() });
 }
 
 /** 取消匹配：队列中则发 match_cancel，否则直接回首页（PVP-02） */
@@ -491,7 +515,7 @@ function connect() {
     setStatus('已连接', 'online');
     if (searching) {
       matchView.showWaiting();
-      sendMessage({ type: 'match_request' });
+      sendMessage({ type: 'match_request', profile: matchProfile() });
     } else if (!inGame) {
       matchView.showReady();
     }
@@ -503,6 +527,7 @@ function connect() {
     socket = null;
     setStatus('已断开', 'offline');
     searching = false;
+    opponentInfoEl.hidden = true;
     if (!inGame) {
       matchView.showFailed('无法连接 ' + WS_URL + '，可重试连接；人机模式不受影响');
     }
