@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-28T10:30:05.648Z",
+  "generatedAt": "2026-11-28T10:34:25.221Z",
   "node": "v26.13.1",
   "platform": "win32 x64",
   "note": "仅统计 AI.chooseMove 计算耗时，不含 300–700ms 思考反馈；时限按墙钟控制，CPU 降速时仍在同一时间预算内回退。",
@@ -16,23 +16,23 @@
   ],
   "easy": {
     "count": 12,
-    "avg": 0.29,
-    "p95": 0.57,
-    "max": 0.57
+    "avg": 0.39,
+    "p95": 0.84,
+    "max": 0.84
   },
   "normal": {
     "count": 12,
-    "avg": 2.03,
-    "p95": 5.37,
-    "max": 5.37
+    "avg": 2.73,
+    "p95": 8.69,
+    "max": 8.69
   },
   "hard": {
     "count": 12,
-    "avg": 61.17,
-    "p95": 179.62,
-    "max": 179.62
+    "avg": 72.24,
+    "p95": 219.01,
+    "max": 219.01
   },
-  "estimated6xHardMax": 1077.72,
+  "estimated6xHardMax": 1314.06,
   "cpuThrottling6x": {
     "method": "Chrome DevTools → Performance → CPU: 6x slowdown，再测量困难档单步耗时",
     "expected": "困难档单步 ≤1500ms，且思考期间 UI 锁定、结束后恢复输入",

@@ -117,18 +117,27 @@ function handleMoveIntent(cellPoint) {
 
 /**
  * WebSocket 连接：建立与游戏服务端的连接并展示连接状态。
- * 地址跟随当前访问的主机名（局域网/本机均自动生效），不再硬编码 IP。
- * 页面走 https 时用 wss，否则用 ws；服务端端口固定 3000。
+ * 地址解析（T4-8 / PVP-07）：?server= > localStorage > 同主机 > localhost。
+ * 非法地址被拒绝并回退，失败提示中包含实际尝试的地址。
  */
-function resolveWsUrl() {
-  const secure = window.location.protocol === 'https:';
-  const host = window.location.hostname || 'localhost';
-  return `${secure ? 'wss:' : 'ws:'}//${host}:3000`;
-}
+const serverConfig = window.Gomoku.SettingsStore.resolveServerUrl({
+  search: window.location.search,
+  hostname: window.location.hostname,
+  protocol: window.location.protocol,
+  stored: window.Gomoku.SettingsStore.getServerUrl(),
+});
 
-const WS_URL = resolveWsUrl();
+const WS_URL = serverConfig.url;
 
 const statusEl = document.getElementById('connection-status');
+
+// 非法 ?server= 已回退：记录并提示实际使用的地址（PVP-07）
+if (serverConfig.notice) {
+  console.warn('[ws]', serverConfig.notice);
+  statusEl.textContent = '地址无效，已回退';
+  statusEl.dataset.state = 'offline';
+  statusEl.title = serverConfig.notice;
+}
 
 /**
  * @param {string} text 状态文案
@@ -495,7 +504,7 @@ function connect() {
     setStatus('已断开', 'offline');
     searching = false;
     if (!inGame) {
-      matchView.showFailed('服务器暂不可用，可重试连接；人机模式不受影响');
+      matchView.showFailed('无法连接 ' + WS_URL + '，可重试连接；人机模式不受影响');
     }
   });
 
