@@ -12,8 +12,6 @@ const gameInfoEl = document.getElementById('game-info');
 const turnLabelEl = document.getElementById('turn-label');
 const countdownEl = document.getElementById('countdown');
 const matchOverlayEl = document.getElementById('match-overlay');
-const matchHintEl = document.getElementById('match-hint');
-const matchButtonEl = document.getElementById('match-button');
 const resultOverlayEl = document.getElementById('result-overlay');
 const resultTitleEl = document.getElementById('result-title');
 const resultMessageEl = document.getElementById('result-message');
@@ -298,7 +296,7 @@ function handleGameMessage(message) {
       currentTurn = null;
       pendingMove = null;
       stopCountdown();
-      hideMatchPanel();
+      matchView.showFound();
       hideResultPanel();
       gameInfoEl.hidden = false;
       countdownEl.textContent = '5:00';
@@ -311,7 +309,13 @@ function handleGameMessage(message) {
 
     case 'match_waiting':
       searching = true;
-      showMatchPanel('正在匹配，等待对手加入…', '匹配中…', true);
+      matchView.showWaiting();
+      break;
+
+    case 'match_cancelled':
+      searching = false;
+      matchView.hide();
+      window.Gomoku.router.navigate('home');
       break;
 
     case 'turn_start': {
@@ -379,17 +383,47 @@ function rollbackPendingMove() {
   boardView.render();
 }
 
-/** 显示匹配面板 */
-function showMatchPanel(hint, buttonText, buttonDisabled) {
-  matchOverlayEl.hidden = false;
-  matchHintEl.textContent = hint;
-  matchButtonEl.textContent = buttonText;
-  matchButtonEl.disabled = buttonDisabled;
+/** 匹配视图（T4-7）：等待时长、取消、重试与断线提示 */
+const matchView = window.Gomoku.MatchView.create({
+  root: matchOverlayEl,
+  onStart: startMatch,
+  onCancel: cancelMatch,
+  onRetry: () => {
+    ensureAudioCtx();
+    connect();
+  },
+  onHome: () => {
+    searching = false;
+    matchView.hide();
+    window.Gomoku.router.navigate('home');
+  },
+});
+
+/** 开始匹配：未连接则先连接，连上后自动入队 */
+function startMatch() {
+  ensureAudioCtx(); // 首次用户交互时解锁音频上下文
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    searching = true;
+    matchView.showConnecting();
+    connect();
+    return;
+  }
+
+  searching = true;
+  matchView.showWaiting();
+  sendMessage({ type: 'match_request' });
 }
 
-/** 隐藏匹配面板 */
-function hideMatchPanel() {
-  matchOverlayEl.hidden = true;
+/** 取消匹配：队列中则发 match_cancel，否则直接回首页（PVP-02） */
+function cancelMatch() {
+  if (socket && socket.readyState === WebSocket.OPEN && searching) {
+    matchView.showCancelling();
+    sendMessage({ type: 'match_cancel' });
+    return;
+  }
+  searching = false;
+  matchView.hide();
+  window.Gomoku.router.navigate('home');
 }
 
 /** 对局结束原因文案（按胜负区分） */
@@ -427,23 +461,8 @@ resultButtonEl.addEventListener('click', () => {
   hideResultPanel();
   if (!inGame) {
     // 对局已结束：回到匹配入口，便于直接开始下一局
-    showMatchPanel('点击下方按钮开始匹配对手', '开始匹配', false);
+    matchView.showReady();
   }
-});
-
-matchButtonEl.addEventListener('click', () => {
-  ensureAudioCtx(); // 首次用户交互时解锁音频上下文
-  if (!socket || socket.readyState !== WebSocket.OPEN) {
-    // 手动重试连接；若启动连接仍在进行，connect() 会防止重复创建。
-    searching = true;
-    showMatchPanel('正在连接服务器…', '连接中…', true);
-    connect();
-    return;
-  }
-
-  searching = true;
-  showMatchPanel('正在匹配，等待对手加入…', '匹配中…', true);
-  sendMessage({ type: 'match_request' });
 });
 
 function connect() {
@@ -453,6 +472,7 @@ function connect() {
 
   // 启动及重试均只更新状态，不弹 alert，也不自动循环重连（自动恢复由 T5-5 交付）。
   setStatus('连接中…', 'connecting');
+  if (!inGame && !searching) matchView.showConnecting();
   const ws = new WebSocket(WS_URL);
   socket = ws;
 
@@ -461,10 +481,10 @@ function connect() {
     console.log('[ws] connected:', WS_URL);
     setStatus('已连接', 'online');
     if (searching) {
-      showMatchPanel('正在匹配，等待对手加入…', '匹配中…', true);
+      matchView.showWaiting();
       sendMessage({ type: 'match_request' });
     } else if (!inGame) {
-      showMatchPanel('点击下方按钮开始匹配对手', '开始匹配', false);
+      matchView.showReady();
     }
   });
 
@@ -475,7 +495,7 @@ function connect() {
     setStatus('已断开', 'offline');
     searching = false;
     if (!inGame) {
-      showMatchPanel('服务器暂不可用，可重试连接；人机模式不受影响', '重试连接', false);
+      matchView.showFailed('服务器暂不可用，可重试连接；人机模式不受影响');
     }
   });
 

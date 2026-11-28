@@ -260,8 +260,14 @@ body {
   z-index: 2;
 }
 
+/* 匹配中（T4-7）：视口级遮罩，保证面板无需滚动即可见 */
 .match-overlay {
+  position: fixed;
+  inset: 0;
+  padding: 24px;
+  border-radius: 0;
   background: rgba(250, 240, 214, 0.93);
+  z-index: 20;
 }
 
 .match-overlay[hidden],
@@ -319,6 +325,56 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* 匹配中：等待时长与操作区（T4-7 / PVP-02） */
+.match-elapsed {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(110, 74, 34, 0.75);
+}
+
+.match-elapsed-value {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  color: #5a3f22;
+}
+
+.match-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.match-secondary {
+  padding: 10px 22px;
+  border: 1px solid rgba(140, 98, 48, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #5a3f22;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.match-secondary:hover {
+  background: rgba(140, 98, 48, 0.1);
+}
+
+.match-secondary:focus-visible,
+.match-button:focus-visible {
+  outline: 2px solid #b03a2e;
+  outline-offset: 3px;
+}
+
+@media (pointer: coarse) {
+  .match-button,
+  .match-secondary {
+    min-height: 44px;
+  }
 }
 
 .result-overlay {
