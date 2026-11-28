@@ -3,7 +3,7 @@
 const { WebSocketServer } = require('ws');
 const { parse, send } = require('./protocol');
 const { Matchmaker } = require('./matchmaker');
-const { validateMove, applyMove, handleDisconnect, clearTurnTimer } = require('./game');
+const { validateMove, applyMove, handleDisconnect } = require('./game');
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -26,18 +26,10 @@ function clearPlayerRoomState(ws) {
 /**
  * 对局结束（五连/超时/断线）后清理房间：
  * 删除房间、清空棋盘与当前回合、重置双方的对局标记，
- * 使双方可以立即重新匹配。
+ * 使双方可以立即重新匹配。清理逻辑由 Matchmaker 统一实现（幂等）。
  */
 function cleanupRoom(room) {
-  if (!matchmaker.rooms.has(room.id)) return; // 已清理过则直接返回，保证幂等
-
-  clearTurnTimer(room);
-  for (const player of room.players) {
-    clearPlayerRoomState(player.ws);
-  }
-  room.board = null;
-  room.turn = null;
-  matchmaker.rooms.delete(room.id);
+  if (!matchmaker.cleanupRoom(room)) return; // 已清理过则直接返回
   log(`room ${room.id} cleaned up`);
 }
 
@@ -79,9 +71,6 @@ wss.on('connection', (ws, req) => {
         if (room) {
           // 对局结束（五连/超时/断线）后统一清理房间，允许立即重新匹配
           room.onEnd = () => cleanupRoom(room);
-          for (const player of room.players) {
-            player.ws.inGame = true;
-          }
         }
         break;
       }

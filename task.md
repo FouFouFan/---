@@ -83,7 +83,7 @@
 目标：两个终端稳定匹配，可取消、可见对手、有心跳。退出条件：同机双窗口完成 10 局无残留队列/房间；跨设备可用性在 M6 验证。
 
 - [x] **T4-1 档案裁剪模块** ｜ 文件：`server/profile.js`、`test/server-profile.test.js` ｜ 依赖：T0-4 ｜ 验收：PVP-09、7.7；昵称裁剪、头像白名单、默认匿名、拒绝自定义头像 ✅ 2026-11-28 新建 server/profile.js（CommonJS，无 ws 依赖）：sanitizeProfile 只输出 `{playerId,nickname,avatarId}` 白名单，avatarDataUrl 与未知字段直接丢弃不转发；playerId 须匹配 `/^gm_[a-z0-9]{6,20}$/` 否则 null（匿名）；nickname 去 C0/C1 控制字符+trim 后按 UTF-16 截断 24 单元（避免孤立代理）空则「棋客」；avatarId 仅接受 8 个预设否则 maple；非对象输入降级匿名默认不抛错；test/server-profile.test.js 10 用例；npm test 148/148 通过
-- [ ] **T4-2 匹配队列改造** ｜ 文件：`server/matchmaker.js`、`test/matchmaker.test.js` ｜ 依赖：T4-1 ｜ 验收：PVP-02/03/04/05；取消、幂等、FIFO、先入队执黑、队列上限、清理幂等
+- [x] **T4-2 匹配队列改造** ｜ 文件：`server/matchmaker.js`、`test/matchmaker.test.js` ｜ 依赖：T4-1 ｜ 验收：PVP-02/03/04/05；取消、幂等、FIFO、先入队执黑、队列上限、清理幂等 ✅ 2026-11-28 重写 matchmaker.js：队列项 `{ws, profile}`（入队即 sanitizeProfile 裁剪）；enqueue 幂等回 `match_waiting{position}`、在对局中回 `already_in_game`、队列满 100 回 `server_busy`；新增 cancel（出队+`match_cancelled`，重复取消仍回执幂等）与 positionOf/dequeue；createRoom 下发 `protocolVersion:2` 与 `opponent{playerId,nickname,avatarId}`，房内设置 inGame 并挂 room.onEnd；cleanupRoom 幂等并清双方标记；server.js 委托 matchmaker.cleanupRoom 避免双份清理逻辑；test/matchmaker.test.js 11 用例（FIFO/执黑/幂等/取消/上限/断线出队/恶意档案/清理幂等/32 房间/v1 无 profile）；双客户端冒烟匹配通过；npm test 159/159 通过
 - [ ] **T4-3 服务端接入** ｜ 文件：`server/server.js` ｜ 依赖：T4-2 ｜ 验收：PVP-06/09；`match_cancel`、心跳 30s×2、`maxPayload` 8KB、限流、启动打印 LAN 地址
 - [ ] **T4-4 和棋/认输/满盘** ｜ 文件：`server/game.js`、`server/board.js` ｜ 依赖：T4-3 ｜ 验收：PVP-10/11、RULE-04；`winner:null`、`isFull()`、`resign` 判负、计时器清理
 - [ ] **T4-5 协议文档** ｜ 文件：`docs/protocol-v2.md` ｜ 依赖：T4-1~T4-4 ｜ 验收：字段/错误码/兼容矩阵与 spec 第 7 章一致
