@@ -77,8 +77,8 @@
       "index": 10,
       "seed": 2000,
       "difficulty": "hard",
-      "moves": 60,
-      "result": "draw"
+      "moves": 21,
+      "result": "black"
     },
     {
       "index": 11,
@@ -287,7 +287,7 @@
       "index": 40,
       "seed": 5000,
       "difficulty": "hard",
-      "moves": 51,
+      "moves": 21,
       "result": "black"
     },
     {
@@ -427,7 +427,7 @@
       "index": 60,
       "seed": 7000,
       "difficulty": "hard",
-      "moves": 11,
+      "moves": 21,
       "result": "black"
     },
     {
@@ -567,7 +567,7 @@
       "index": 80,
       "seed": 9000,
       "difficulty": "hard",
-      "moves": 21,
+      "moves": 51,
       "result": "black"
     },
     {
